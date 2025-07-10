@@ -4,8 +4,9 @@
 #include <string>
 #include <vector>
 #include <tuple>
+#include <sqlite3.h>
+#include <mysql.h>
 
-#include "sqlite3.h"
 #include "TripleStore.h"
 
 // using Triple = std::tuple<std::string, std::string, std::string>;
