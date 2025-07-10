@@ -86,82 +86,6 @@ void DatalogEngine::reason() {
     std::atomic<int> activeTaskCount(0); // 活动任务计数器
     std::mutex queueMutex; // 保护队列的互斥锁
 
-    ////////////////////////////////////
-    /*
-    while (!newFactQueue.empty() || activeTaskCount > 0) {
-        reasonCount++;
-        Triple currentTriple("", "", ""); // 当前三元组
-        {
-            std::lock_guard<std::mutex> lock(queueMutex);
-            if (!newFactQueue.empty()) {
-                currentTriple = newFactQueue.front();
-                newFactQueue.pop();
-                activeTaskCount++; // 增加活动任务计数
-            } else {
-                // 队列为空但仍有活动任务，等待其他线程完成
-                std::this_thread::yield();
-                continue;
-            }
-        }
-
-        // 将当前事实加入事实库
-        {
-            std::lock_guard<std::mutex> lock(storeMutex);
-            if (store.getNodeByTriple(currentTriple) == nullptr) {
-                store.addTriple(currentTriple);
-                // newFactAdded = true;
-            }
-        }
-
-        // 异步处理当前三元组
-        std::future<void> future = std::async(std::launch::async, [&, currentTriple]() {
-            // 根据rulesMap找到规则
-            auto it = rulesMap.find(currentTriple.predicate);
-            if (it != rulesMap.end()) {
-                for (const auto& rulePair : it->second) {
-                    size_t ruleIdx = rulePair.first;
-                    size_t patternIdx = rulePair.second;
-                    const Rule& rule = rules[ruleIdx];
-                    const Triple& pattern = rule.body[patternIdx];
-
-                    // 绑定变量
-                    std::map<std::string, std::string> bindings;
-                    if (isVariable(pattern.subject)) {
-                        bindings[pattern.subject] = currentTriple.subject;
-                    }
-                    if (isVariable(pattern.object)) {
-                        bindings[pattern.object] = currentTriple.object;
-                    }
-
-                    // 调用leapfrogTriejoin推理新事实
-                    std::vector<Triple> inferredFacts;
-                    leapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, inferredFacts, bindings);
-
-                    // 将新事实加入队列
-                    {
-                        std::lock_guard<std::mutex> lock(queueMutex);
-                        for (const auto& fact : inferredFacts) {
-                            // std::lock_guard<std::mutex> storeLock(storeMutex);
-                            if (store.getNodeByTriple(fact) == nullptr) {
-                                // store.addTriple(fact);
-                                newFactQueue.push(fact);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 任务完成，减少活动任务计数
-            activeTaskCount--;
-        });
-
-        // 确保任务完成
-        future.get();
-    }
-
-    */
-    /////////////////////////////////////
-
     std::atomic<bool> done(false);
     std::condition_variable cv;
     const auto threadCount = std::thread::hardware_concurrency();
@@ -180,6 +104,9 @@ void DatalogEngine::reason() {
                 newFactQueue.pop();
                 activeTaskCount++; // 增加活动任务计数
                 // reasonCount++; // 统计推理次数
+                if (newFactQueue.size() % 100 == 0) {
+                    std::cout << newFactQueue.size() << ' ' << reasonCount << std::endl;
+                }
             }
 
             // 将当前事实加入事实库
@@ -189,6 +116,10 @@ void DatalogEngine::reason() {
                     store.addTriple(currentTriple);
                     // newFactAdded = true;
                     // reasonCount++;
+                }
+                else {
+                    // 如果事实已存在，则跳过
+                    continue;
                 }
                 reasonCount++;
             }
@@ -279,6 +210,8 @@ void DatalogEngine::leapfrogTriejoin(
     std::map<std::string, std::string>& bindings
 ) {
 
+    // std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
     std::set<std::string> variables;
     std::map<std::string, std::vector<std::pair<int, int>>> varPositions; // 变量 -> [(triple_idx, position)]
     // todo: 能不能根据varPositions来筛选代入新三元组对应变量后可能产生冲突的三元组模式？需要找出主语和宾语变量都包含在新三元组对应模式中的三元组模式
@@ -310,6 +243,10 @@ void DatalogEngine::leapfrogTriejoin(
     // std::map<std::string, std::string> bindings;
     // 对每个变量进行leapfrog join
     join_by_variable(psoRoot, posRoot, rule, variables, varPositions, bindings, 0, newFacts);
+
+    // std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elapsed = end - start;
+    // std::cout << elapsed.count() << std::endl;
 }
 
 void DatalogEngine::join_by_variable(

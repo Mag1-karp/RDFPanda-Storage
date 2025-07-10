@@ -43,6 +43,73 @@ void parseCSVFile(const std::string& filename) {
     }
 }
 
+//// 测试用，解析并打印数据库表
+void parseDatabaseTable(const std::string& schemaName, const std::string& tableName) {
+    InputParser parser;
+    std::vector<Triple> triples = parser.parseMySQLTable(schemaName, tableName);
+    for (const auto& triple : triples) {
+        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+    }
+}
+
+//// 测试用，测试SQLite数据库的连接和查询功能
+void connectSQLite(const std::string& dbPath) {
+    sqlite3* db;
+    char* errMsg = nullptr;
+
+    // 打开数据库
+    if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
+        std::cerr << "Unable to open database: " << sqlite3_errmsg(db) << std::endl;
+        return;
+    }
+
+    std::cout << "Successfully opened database: " << dbPath << std::endl;
+
+    // 创建表
+    const char* createTableSQL = "CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT);";
+    if (sqlite3_exec(db, createTableSQL, nullptr, nullptr, &errMsg) != SQLITE_OK) {
+        std::cerr << "Failed to create table: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    } else {
+        std::cout << "Table created successfully." << std::endl;
+    }
+
+    // 插入数据
+    const char* insertSQL = "INSERT INTO test (name) VALUES ('example');";
+    if (sqlite3_exec(db, insertSQL, nullptr, nullptr, &errMsg) != SQLITE_OK) {
+        std::cerr << "Failed to insert data: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    } else {
+        std::cout << "Successfully inserted data." << std::endl;
+    }
+
+    // 查询数据
+    const char* selectSQL = "SELECT * FROM test;";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, selectSQL, -1, &stmt, nullptr) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            int id = sqlite3_column_int(stmt, 0);
+            const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            std::cout << "ID: " << id << ", Name: " << name << std::endl;
+        }
+        sqlite3_finalize(stmt);
+    } else {
+        std::cerr << "Query failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    // 关闭数据库
+    sqlite3_close(db);
+}
+
+//// 测试用，测试对SQLite中表的解析
+void TestSQLiteTableParser() {
+    InputParser parser;
+    std::vector<Triple> triples = parser.parseSQLiteTable("test", "test_triple");
+    for (const auto& triple : triples) {
+        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+    }
+}
+
 //// 测试用，测试TripleStore的按主语查询功能
 void TestQueryBySubject() {
     InputParser parser;
@@ -173,8 +240,8 @@ void TestMillionTriples() {
     InputParser parser;
     TripleStore store;
 
-    // std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
-    std::vector<Triple> triples = parser.parseTurtle("input_examples/data_10k.ttl");
+    std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/data_1m.ttl");
     std::cout << "Total triples: " << triples.size() << std::endl;
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
@@ -190,8 +257,8 @@ void TestMillionTriples() {
     std::cout << "Elapsed time for storing triples: " << elapsed.count() << " seconds" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
-    // std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/DAG-R.dl");
-    std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/mid.dl");
+    std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/DAG-R.dl");
+    // std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/mid.dl");
     end = std::chrono::high_resolution_clock::now();
     elapsed = end - start;
     std::cout << "Elapsed time for parsing rules:   " << elapsed.count() << " seconds" << std::endl;
@@ -212,8 +279,8 @@ void startTimer() {
 
     // 这里调用要测试的函数
     // TestLargeFile();
-    TestMidFile();
-    // TestMillionTriples();
+    // TestMidFile();
+    TestMillionTriples();
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
@@ -228,7 +295,11 @@ int main() {
     // TestDatalogParser();
     // TestLargeFile();
     // startTimer();
-    TestMillionTriples();
+    // TestMillionTriples();
+
+    parseDatabaseTable("rdfpanda", "triples");
+    // connectSQLite("./SQLiteDb/test.db");
+    // TestSQLiteTableParser();
 
     return 0;
 }

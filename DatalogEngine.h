@@ -7,7 +7,7 @@
 #include <set>
 
 #include "TripleStore.h"
-
+#include "BloomFilter.h"
 
 class DatalogEngine {
 private:
@@ -15,6 +15,8 @@ private:
     std::vector<Rule> rules;
     std::map<std::string, std::vector<std::pair<size_t, size_t>>> rulesMap; // 谓语 -> [规则下标, 规则体中谓语下标]
     // std::map<std::string, std::vector< size_t>> rulesMap; // 谓语 -> [规则下标]
+    // BloomFilter bloomFilter; // 用于快速判断三元组是否已存在，避免重复推理
+
 
 public:
     DatalogEngine(TripleStore& store, const std::vector<Rule>& rules) : store(store), rules(rules) {

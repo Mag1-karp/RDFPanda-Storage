@@ -7,6 +7,13 @@
 #include <future>
 #include <vector>
 #include <mutex>
+// #include <mysql_driver.h>
+// #include <mysql_connection.h>
+// #include <cppconn/statement.h>
+// #include <cppconn/resultset.h>
+#include <mysql.h>
+// #include "sqlite3.h"
+#include "DatabaseConfig.h"
 
 std::vector<Triple> InputParser::parseNTriples(const std::string& filename) {
     std::vector<Triple> triples;
@@ -161,6 +168,93 @@ std::vector<Triple> InputParser::parseCSV(const std::string& filename) {
 
     return triples;
 }
+
+std::vector<Triple> InputParser::parseMySQLTable(const std::string& schemaName, const std::string& tableName) {
+    std::vector<Triple> triples;
+    MYSQL* conn;
+    MYSQL_RES* res;
+    MYSQL_ROW row;
+
+    // 初始化 MySQL 连接
+    conn = mysql_init(nullptr);
+    if (conn == nullptr) {
+        std::cerr << "mysql_init() failed" << std::endl;
+        return triples;
+    }
+
+    // 连接到数据库
+    if (mysql_real_connect(conn, DB_HOST, DB_USER, DB_PASSWORD, schemaName.c_str(), DB_PORT, nullptr, 0) == nullptr) {
+        std::cerr << "mysql_real_connect() failed: " << mysql_error(conn) << std::endl;
+        mysql_close(conn);
+        return triples;
+    }
+
+    // 构建查询语句
+    std::string query = "SELECT subject, predicate, object FROM " + tableName;
+
+    // 执行查询
+    if (mysql_query(conn, query.c_str())) {
+        std::cerr << "mysql_query() failed: " << mysql_error(conn) << std::endl;
+        mysql_close(conn);
+        return triples;
+    }
+
+    // 获取查询结果
+    res = mysql_store_result(conn);
+    if (res == nullptr) {
+        std::cerr << "mysql_store_result() failed: " << mysql_error(conn) << std::endl;
+        mysql_close(conn);
+        return triples;
+    }
+
+    // 解析结果集
+    while ((row = mysql_fetch_row(res))) {
+        std::string subject = row[0] ? row[0] : "";
+        std::string predicate = row[1] ? row[1] : "";
+        std::string object = row[2] ? row[2] : "";
+        triples.emplace_back(subject, predicate, object);
+    }
+
+    // 释放资源
+    mysql_free_result(res);
+    mysql_close(conn);
+
+    return triples;
+}
+
+std::vector<Triple> InputParser::parseSQLiteTable(const std::string &dbName, const std::string &tableName) {
+    std::vector<Triple> triples;
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    std::string dbPath = "./SQLiteDb/" + dbName + ".db";
+    // 打开数据库
+    if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
+        std::cerr << "Unable to open database: " << sqlite3_errmsg(db) << std::endl;
+        return triples;
+    }
+    std::string query = "SELECT subject, predicate, object FROM " + tableName;
+    // 准备查询语句
+    if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return triples;
+    }
+    // 执行查询并解析结果
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* subject = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        const char* predicate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        const char* object = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+
+        if (subject && predicate && object) {
+            triples.emplace_back(subject, predicate, object);
+        }
+    }
+    // 释放资源
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return triples;
+}
+
 
 std::vector<Rule> InputParser::parseDatalogFromFile(const std::string &filename) {
     std::vector<Rule> rules;
