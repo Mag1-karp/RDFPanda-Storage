@@ -9,6 +9,10 @@ include_directories("C:/Program Files/MySQL/MySQL Server 8.0/include")
 link_directories("C:/Program Files/MySQL/MySQL Server 8.0/lib")
 link_libraries(libmysql)
 
+include_directories("C:/tools/SQLite/src")
+link_directories("C:/tools/SQLite")
+link_libraries(sqlite3)
+
 add_executable(RDFPanda_Storage
         main.cpp
         InputParser.h
@@ -21,8 +25,6 @@ add_executable(RDFPanda_Storage
         #BloomFilter.cpp
         #BloomFilter.h
         DatabaseConfig.h
-
-        sqlite3.c
 )
 
 # 添加测试目录
@@ -48,4 +50,4 @@ target_link_libraries(RDFPanda_Storage libmysql)
 
 #include_directories("C:\\tools\\SQLite")
 #link_directories("C:\\tools\\SQLite")
-#target_link_libraries(RDFPanda_Storage sqlite3)
+target_link_libraries(RDFPanda_Storage sqlite3)

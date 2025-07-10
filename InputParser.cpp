@@ -7,12 +7,7 @@
 #include <future>
 #include <vector>
 #include <mutex>
-// #include <mysql_driver.h>
-// #include <mysql_connection.h>
-// #include <cppconn/statement.h>
-// #include <cppconn/resultset.h>
-#include <mysql.h>
-// #include "sqlite3.h"
+
 #include "DatabaseConfig.h"
 
 std::vector<Triple> InputParser::parseNTriples(const std::string& filename) {
