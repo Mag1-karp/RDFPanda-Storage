@@ -79,10 +79,14 @@ class DatalogEngine {
 private:
     TripleStore& store;
     std::vector<Rule> rules;
-    std::map<std::string, std::vector<std::pair<size_t, size_t>>> rulesMap; // 谓语 -> [规则下标, 规则体中谓语下标]
+    std::map<uint32_t, std::vector<std::pair<size_t, size_t>>> rulesMap; // 谓语ID -> [规则下标, 规则体中谓语下标]
     
-    // LRU缓存用于存在性检查
-    LRUCache<std::string, bool> existenceCache;
+    // 优化的存在性缓存：使用Triple ID的哈希作为key
+    LRUCache<uint64_t, bool> tripleExistenceCache;
+    
+    // 字符串到ID的缓存，避免频繁查询字符串池
+    mutable std::unordered_map<std::string, uint32_t> stringToIdCache;
+    mutable std::mutex cacheAccessMutex;
     
     // 批处理相关（已移除批处理逻辑以确保推理正确性）
     // static const size_t BATCH_SIZE = 100;
@@ -99,7 +103,7 @@ private:
 
 
 public:
-    DatalogEngine(TripleStore& store, const std::vector<Rule>& rules) : store(store), rules(rules), existenceCache(100000) {
+    DatalogEngine(TripleStore& store, const std::vector<Rule>& rules) : store(store), rules(rules), tripleExistenceCache(100000) {
         initiateRulesMap();
         
         // 预分配对象池
@@ -137,6 +141,10 @@ private:
                           std::map<std::string, std::string> &bindings, int varIdx, std::vector<Triple> &newFacts);
 
     static std::string substituteVariable(const std::string &term, const std::map<std::string, std::string> &bindings);
+    
+    // 新增：获取ID的辅助函数
+    uint32_t getIdFromString(const std::string& str) const;
+    uint32_t substituteVariableToId(const std::string& term, const std::map<std::string, std::string>& bindings) const;
 
     bool checkConflictingTriples(const std::map<std::string, std::string>& bindings,
                                     const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
@@ -147,7 +155,6 @@ private:
     
     // 批处理方法（已移除）
     // void processBatch(std::vector<Triple>& batch);
-    std::string tripleToString(const Triple& triple) const;
     
     // 分片锁相关方法
     size_t getShardIndex(const std::string& predicate) const;

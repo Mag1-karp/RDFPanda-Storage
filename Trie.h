@@ -7,23 +7,54 @@
 #include <map>
 #include <algorithm>
 #include <iostream>
+#include "StringPool.h"
 
-// Triple 和 Rule 类定义
+// 前向声明
+class StringPool;
+
+// Triple 和 Rule 类定义 - 使用字符串池优化
 class Triple {
-public:
-    std::string subject;
-    std::string predicate;
-    std::string object;
+private:
+    uint32_t subject_id;
+    uint32_t predicate_id;
+    uint32_t object_id;
+    static StringPool* global_pool;  // 全局字符串池
 
-    Triple(std::string subject, std::string predicate, std::string object)
-            : subject(std::move(subject)), predicate(std::move(predicate)), object(std::move(object)) {}
+public:
+    // 兼容原有构造函数接口
+    Triple(const std::string& subject, const std::string& predicate, const std::string& object);
+    
+    // 新增：直接使用ID构造（内部优化用）
+    Triple(uint32_t subj_id, uint32_t pred_id, uint32_t obj_id) 
+        : subject_id(subj_id), predicate_id(pred_id), object_id(obj_id) {}
+
+    // 保持原有属性访问接口
+    std::string subject() const;
+    std::string predicate() const;
+    std::string object() const;
+    
+    // 新增：高效的ID访问接口
+    uint32_t getSubjectId() const { return subject_id; }
+    uint32_t getPredicateId() const { return predicate_id; }
+    uint32_t getObjectId() const { return object_id; }
 
     bool operator==(const Triple& rhs) const {
-        return subject == rhs.subject && predicate == rhs.predicate && object == rhs.object;
+        return subject_id == rhs.subject_id && 
+               predicate_id == rhs.predicate_id && 
+               object_id == rhs.object_id;
     }
 
     bool operator!=(const Triple& rhs) const {
         return !(*this == rhs);
+    }
+    
+    // 设置全局字符串池
+    static void setStringPool(StringPool* pool) {
+        global_pool = pool;
+    }
+    
+    static StringPool* getStringPool() {
+        return global_pool;
     }
 };
 
@@ -38,9 +69,10 @@ public:
 };
 
 // TrieNode：Trie 的节点，使用 std::map 保持子节点有序（即 PSO 顺序中的字典顺序）
+// 优化：使用ID而非字符串作为键
 class TrieNode {
 public:
-    std::map<std::string, TrieNode*> children;
+    std::map<uint32_t, TrieNode*> children;
     bool isEnd;
 
     TrieNode() : isEnd(false) {}
@@ -74,11 +106,12 @@ private:
 };
 
 // TrieIterator：对 TrieNode 的子节点进行遍历，提供类似迭代器的接口
+// 优化：使用ID而非字符串
 class TrieIterator {
 public:
     TrieNode* node; // 当前所在节点
-    std::map<std::string, TrieNode*>::iterator it;
-    std::map<std::string, TrieNode*>::iterator end;
+    std::map<uint32_t, TrieNode*>::iterator it;
+    std::map<uint32_t, TrieNode*>::iterator end;
 
     TrieIterator(TrieNode* n) : node(n) {
         if (node) {
@@ -91,7 +124,7 @@ public:
         return it == end;
     }
 
-    std::string key() const {
+    uint32_t key() const {
         return it->first;
     }
 
@@ -102,7 +135,7 @@ public:
     }
 
     // 跳跃到不小于 target 的位置
-    void seek(const std::string& target) {
+    void seek(uint32_t target) {
         it = node->children.lower_bound(target);
     }
 
@@ -134,7 +167,7 @@ public:
         return done;
     }
 
-    std::string key() const {
+    uint32_t key() const {
         return iterators[p]->key();
     }
 

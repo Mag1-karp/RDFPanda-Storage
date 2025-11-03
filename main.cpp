@@ -21,7 +21,7 @@ void parseNTFile(const std::string& filename) {
     InputParser parser;
     std::vector<Triple> triples = parser.parseNTriples(filename);
     for (const auto& triple : triples) {
-        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+        std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
     }
 }
 
@@ -30,7 +30,7 @@ void parseTurtleFile(const std::string& filename) {
     InputParser parser;
     std::vector<Triple> triples = parser.parseTurtle(filename);
     for (const auto& triple : triples) {
-        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+        std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
     }
 }
 
@@ -39,7 +39,7 @@ void parseCSVFile(const std::string& filename) {
     InputParser parser;
     std::vector<Triple> triples = parser.parseCSV(filename);
     for (const auto& triple : triples) {
-        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+        std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
     }
 }
 
@@ -48,7 +48,7 @@ void parseDatabaseTable(const std::string& schemaName, const std::string& tableN
     InputParser parser;
     std::vector<Triple> triples = parser.parseMySQLTable(schemaName, tableName);
     for (const auto& triple : triples) {
-        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+        std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
     }
 }
 
@@ -106,7 +106,7 @@ void TestSQLiteTableParser() {
     InputParser parser;
     std::vector<Triple> triples = parser.parseSQLiteTable("test", "test_triple");
     for (const auto& triple : triples) {
-        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+        std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
     }
 }
 
@@ -122,7 +122,7 @@ void TestQueryBySubject() {
 
     std::vector<Triple> queryResult = store.queryBySubject("http://example.org/Alice");
     for (const auto& triple : queryResult) {
-        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+        std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
     }
 }
 
@@ -177,7 +177,7 @@ void TestInfer() {
     // 查询推理结果
     std::vector<Triple> queryResult = store.queryByPredicate("http://example.org/knows");
     for (const auto& triple : queryResult) {
-        std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+        std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
     }
 }
 
@@ -189,9 +189,9 @@ void TestDatalogParser() {
     for (const auto& rule : rules) {
         std::cout << rule.name << std::endl;
         for (const auto& triple : rule.body) {
-            std::cout << triple.subject << " " << triple.predicate << " " << triple.object << std::endl;
+            std::cout << triple.subject() << " " << triple.predicate() << " " << triple.object() << std::endl;
         }
-        std::cout << "=> " << rule.head.subject << " " << rule.head.predicate << " " << rule.head.object << std::endl;
+        std::cout << "=> " << rule.head.subject() << " " << rule.head.predicate() << " " << rule.head.object() << std::endl;
     }
 }
 
@@ -240,8 +240,8 @@ void TestMillionTriples() {
     InputParser parser;
     TripleStore store;
 
-    std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
-    // std::vector<Triple> triples = parser.parseTurtle("input_examples/data_1m.ttl");
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
+    std::vector<Triple> triples = parser.parseTurtle("input_examples/data_1m.ttl");
     std::cout << "Total triples: " << triples.size() << std::endl;
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
@@ -257,8 +257,8 @@ void TestMillionTriples() {
     std::cout << "Elapsed time for storing triples: " << elapsed.count() << " seconds" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
-    std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/DAG-R.dl");
-    // std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/mid.dl");
+    // std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/DAG-R.dl");
+    std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/mid.dl");
     end = std::chrono::high_resolution_clock::now();
     elapsed = end - start;
     std::cout << "Elapsed time for parsing rules:   " << elapsed.count() << " seconds" << std::endl;
@@ -289,8 +289,62 @@ void startTimer() {
     std::cout << "Elapsed time: " << elapsed.count() << " seconds" << std::endl;
 }
 
-int main() {
+//// 测试字符串池性能优化效果
+void TestStringPoolPerformance() {
+    std::cout << "=== 字符串池性能测试 ===" << std::endl;
+    
+    InputParser parser;
+    TripleStore store;
+    
+    // 设置字符串池
+    parser.setStringPool(&store.getStringPool());
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    // 解析测试文件
+    std::vector<Triple> triples = parser.parseTurtle("input_examples/example.ttl");
+    std::cout << "解析了 " << triples.size() << " 个三元组" << std::endl;
+    
+    auto parse_end = std::chrono::high_resolution_clock::now();
+    auto parse_time = std::chrono::duration_cast<std::chrono::milliseconds>(parse_end - start);
+    std::cout << "解析耗时: " << parse_time.count() << " ms" << std::endl;
+    
+    // 添加到存储
+    for (const auto& triple : triples) {
+        store.addTriple(triple);
+    }
+    
+    auto store_end = std::chrono::high_resolution_clock::now();
+    auto store_time = std::chrono::duration_cast<std::chrono::milliseconds>(store_end - parse_end);
+    std::cout << "存储耗时: " << store_time.count() << " ms" << std::endl;
+    
+    // 字符串池统计信息
+    auto stats = store.getStringPoolStats();
+    std::cout << "\n=== 字符串池统计 ===" << std::endl;
+    std::cout << "唯一字符串数: " << stats.unique_strings << std::endl;
+    std::cout << "字符串总字节数: " << stats.total_string_bytes << std::endl;
+    std::cout << "索引开销: " << stats.id_map_size << " 字节" << std::endl;
+    std::cout << "压缩比: " << stats.compression_ratio << ":1" << std::endl;
+    
+    // 查询性能测试
+    auto query_start = std::chrono::high_resolution_clock::now();
+    
+    for (int i = 0; i < 1000; ++i) {
+        auto result = store.queryByPredicate("http://example.org/knows");
+    }
+    
+    auto query_end = std::chrono::high_resolution_clock::now();
+    auto query_time = std::chrono::duration_cast<std::chrono::microseconds>(query_end - query_start);
+    std::cout << "1000次查询耗时: " << query_time.count() << " μs" << std::endl;
+    std::cout << "平均每次查询: " << query_time.count() / 1000.0 << " μs" << std::endl;
+}
 
+int main() {
+    
+    // 测试字符串池性能优化
+    // TestStringPoolPerformance();
+    
+    // 原有测试
     // TestInfer();
     // TestDatalogParser();
     // TestLargeFile();

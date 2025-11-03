@@ -1,10 +1,46 @@
 #include "Trie.h"
+#include "StringPool.h"
+
+// 初始化静态成员
+StringPool* Triple::global_pool = nullptr;
+
+// 实现Triple的方法
+Triple::Triple(const std::string& subject, const std::string& predicate, const std::string& object) {
+    if (global_pool == nullptr) {
+        throw std::runtime_error("StringPool not initialized. Call Triple::setStringPool() first.");
+    }
+    
+    subject_id = global_pool->getId(subject);
+    predicate_id = global_pool->getId(predicate);
+    object_id = global_pool->getId(object);
+}
+
+std::string Triple::subject() const {
+    if (global_pool == nullptr) {
+        return "";
+    }
+    return global_pool->getString(subject_id);
+}
+
+std::string Triple::predicate() const {
+    if (global_pool == nullptr) {
+        return "";
+    }
+    return global_pool->getString(predicate_id);
+}
+
+std::string Triple::object() const {
+    if (global_pool == nullptr) {
+        return "";
+    }
+    return global_pool->getString(object_id);
+}
 
 // 插入时采用 PSO 顺序：先插入 predicate，再 subject，最后 object
 void Trie::insertPSO(const Triple& triple) {
     TrieNode* curr = root;
-    // 顺序：predicate, subject, object
-    std::vector<std::string> keys = { triple.predicate, triple.subject, triple.object };
+    // 顺序：predicate, subject, object (使用ID)
+    std::vector<uint32_t> keys = { triple.getPredicateId(), triple.getSubjectId(), triple.getObjectId() };
     for (const auto & key : keys) {
         if (curr->children.find(key) == curr->children.end()) {
             curr->children[key] = new TrieNode();
@@ -17,8 +53,8 @@ void Trie::insertPSO(const Triple& triple) {
 // 插入时采用 POS 顺序：先插入 predicate，再 object，最后 subject
 void Trie::insertPOS(const Triple &triple) {
     TrieNode* curr = root;
-    // 顺序：predicate, object, subject
-    std::vector<std::string> keys = { triple.predicate, triple.object, triple.subject };
+    // 顺序：predicate, object, subject (使用ID)
+    std::vector<uint32_t> keys = { triple.getPredicateId(), triple.getObjectId(), triple.getSubjectId() };
     for (const auto & key : keys) {
         if (curr->children.find(key) == curr->children.end()) {
             curr->children[key] = new TrieNode();
@@ -42,7 +78,9 @@ void Trie::printAllHelper(TrieNode* node, std::vector<std::string>& binding) {
         std::cout << "Triple: (" << binding[1] << ", " << binding[0] << ", " << binding[2] << ")\n";
     }
     for (auto& pair : node->children) {
-        binding.push_back(pair.first);
+        // 将ID转换为字符串用于调试显示
+        std::string idStr = std::to_string(pair.first);
+        binding.push_back(idStr);
         printAllHelper(pair.second, binding);
         binding.pop_back();
     }
@@ -55,8 +93,8 @@ void LeapfrogJoin::leapfrog_search() {
         return;
     }
     while (true) {
-        // 找出所有迭代器中最大的当前key
-        std::string maxKey = iterators[0]->key();
+        // 找出所有迭代器中最大的当前key (使用ID)
+        uint32_t maxKey = iterators[0]->key();
         for (auto it : iterators) {
             if (it->key() > maxKey)
                 maxKey = it->key(); // 遍历更新最大key

@@ -8,11 +8,22 @@
 #include <mysql.h>
 
 #include "TripleStore.h"
+#include "StringPool.h"
 
 // using Triple = std::tuple<std::string, std::string, std::string>;
 
 class InputParser {
+private:
+    StringPool* string_pool = nullptr;  // 可选的字符串池引用
+
 public:
+    // 设置字符串池（用于优化性能）
+    void setStringPool(StringPool* pool) {
+        string_pool = pool;
+        if (pool) {
+            Triple::setStringPool(pool);
+        }
+    }
     std::vector<Triple> parseNTriples(const std::string& filename);
     std::vector<Triple> parseTurtle(const std::string& filename);
     std::vector<Triple> parseCSV(const std::string& filename);
@@ -29,6 +40,14 @@ public:
 
     std::vector<Rule> parseDatalogFromFile(const std::string& filename);
     std::vector<Rule> parseDatalogFromConsole(const std::string& datalogString);
+    
+    // 获取字符串池统计信息（如果有的话）
+    StringPool::PoolStats getStringPoolStats() const {
+        if (string_pool) {
+            return string_pool->getStats();
+        }
+        return {0, 0, 0, 0.0};
+    }
 };
 
 #endif //RDFPANDA_STORAGE_INPUTPARSER_H

@@ -11,30 +11,30 @@
 #include <queue>
 
 void DatalogEngine::initiateRulesMap() {
-    // 建立规则关于规则体中各模式三元组的谓语的索引，方便迭代中用三元组触发规则的应用
+    // 建立规则关于规则体中各模式三元组的谓语ID的索引，方便迭代中用三元组触发规则的应用
     for (const auto& rule : rules) {
         for (const auto& triple : rule.body) {
-            if (isVariable(triple.predicate)) {
+            if (isVariable(triple.predicate())) {
                 // 变量不作为索引
                 continue;
             }
-            std::string predicate = triple.predicate;
+            uint32_t predicateId = triple.getPredicateId();
 
-            if (rulesMap.find(predicate) == rulesMap.end()) {
-                // 如果当前谓语不在map中，则添加
-                rulesMap[predicate] = std::vector<std::pair<size_t, size_t>>();  // 规则下标，规则体中谓语下标
-                // rulesMap[predicate] = std::vector<size_t>();  // 规则下标
+            if (rulesMap.find(predicateId) == rulesMap.end()) {
+                // 如果当前谓语ID不在map中，则添加
+                rulesMap[predicateId] = std::vector<std::pair<size_t, size_t>>();  // 规则下标，规则体中谓语下标
+                // rulesMap[predicateId] = std::vector<size_t>();  // 规则下标
             }
 
             // 由于按照下标遍历，故每个vector中最后一个元素最大，只需检测是否小于当前规则下标即可防止重复
-            // if (!rulesMap[predicate].empty() && rulesMap[predicate].back() >= &rule - &rules[0]) {
+            // if (!rulesMap[predicateId].empty() && rulesMap[predicateId].back() >= &rule - &rules[0]) {
             //     continue;  // 已存在当前规则下标
             // }
 
-            // 向map中谓语对应的规则下标列表中添加当前规则的下标以及该谓语在规则体中的下标
-            rulesMap[predicate].emplace_back(&rule - &rules[0], &triple - &rule.body[0]);
-            // // 向map中谓语对应的规则下标列表中添加当前规则的下标
-            // rulesMap[predicate].emplace_back(&rule - &rules[0]);
+            // 向map中谓语ID对应的规则下标列表中添加当前规则的下标以及该谓语在规则体中的下标
+            rulesMap[predicateId].emplace_back(&rule - &rules[0], &triple - &rule.body[0]);
+            // // 向map中谓语ID对应的规则下标列表中添加当前规则的下标
+            // rulesMap[predicateId].emplace_back(&rule - &rules[0]);
 
         }
     }
@@ -75,7 +75,7 @@ void DatalogEngine::reason() {
         
         // 立即存储所有新事实，确保后续推理能够找到依赖
         for (const auto& triple : newFacts) {
-            std::lock_guard<std::mutex> lock(getShardMutex(triple.predicate));
+            std::lock_guard<std::mutex> lock(getShardMutex(triple.predicate()));
             if (!tripleExists(triple)) {
                 // 立即存储到数据库
                 store.addTriple(triple);
@@ -132,7 +132,7 @@ void DatalogEngine::reason() {
 
             // 处理 currentTriple，推理新事实并加锁入队
             // 根据rulesMap找到规则
-            auto it = rulesMap.find(currentTriple.predicate);
+            auto it = rulesMap.find(currentTriple.getPredicateId());
             if (it != rulesMap.end()) {
                 for (const auto& rulePair : it->second) {
                     size_t ruleIdx = rulePair.first;
@@ -142,11 +142,11 @@ void DatalogEngine::reason() {
 
                     // 绑定变量
                     std::map<std::string, std::string> bindings;
-                    if (isVariable(pattern.subject)) {
-                        bindings[pattern.subject] = currentTriple.subject;
+                    if (isVariable(pattern.subject())) {
+                        bindings[pattern.subject()] = currentTriple.subject();
                     }
-                    if (isVariable(pattern.object)) {
-                        bindings[pattern.object] = currentTriple.object;
+                    if (isVariable(pattern.object())) {
+                        bindings[pattern.object()] = currentTriple.object();
                     }
 
                     // 调用leapfrogTriejoin推理新事实
@@ -160,7 +160,7 @@ void DatalogEngine::reason() {
                     
                     // 第一步：存储新事实
                     for (const auto& fact : inferredFacts) {
-                        std::lock_guard<std::mutex> storeLock(getShardMutex(fact.predicate));
+                        std::lock_guard<std::mutex> storeLock(getShardMutex(fact.predicate()));
                         if (!tripleExists(fact)) {
                             // 立即存储到数据库
                             store.addTriple(fact);
@@ -208,7 +208,7 @@ void DatalogEngine::reason() {
 
 
     // 输出推理完成后的事实库大小
-    std::cout << "Total triples in store:           " << store.getAllTriples().size() << std::endl;
+    std::cout << "Total triples in store:           " << store.getTripleCount() << std::endl;
     // 输出总共推理的次数
     std::cout << "Total reasoning count:            " << reasonCount.load() << std::endl;
 }
@@ -236,18 +236,18 @@ void DatalogEngine::leapfrogTriejoin(
 
     for (int i = 0; i < rule.body.size(); i++) {
         const Triple& triple = rule.body[i];
-        if (isVariable(triple.subject)) {
-            variables.insert(triple.subject);
-            varPositions[triple.subject].emplace_back(i, 0); // 0 表示主语位置
+        if (isVariable(triple.subject())) {
+            variables.insert(triple.subject());
+            varPositions[triple.subject()].emplace_back(i, 0); // 0 表示主语位置
         }
-        if (isVariable(triple.predicate)) {
-            variables.insert(triple.predicate);
-            varPositions[triple.predicate].emplace_back(i, 1); // 1 表示谓语位置
+        if (isVariable(triple.predicate())) {
+            variables.insert(triple.predicate());
+            varPositions[triple.predicate()].emplace_back(i, 1); // 1 表示谓语位置
             // 实际基本不考虑谓语为变量的情况，但以防万一还是加上
         }
-        if (isVariable(triple.object)) {
-            variables.insert(triple.object);
-            varPositions[triple.object].emplace_back(i, 2); // 2 表示宾语位置
+        if (isVariable(triple.object())) {
+            variables.insert(triple.object());
+            varPositions[triple.object()].emplace_back(i, 2); // 2 表示宾语位置
         }
     }
 
@@ -275,9 +275,9 @@ void DatalogEngine::join_by_variable(
 ) {
     // 当所有变量都已绑定时，生成新的事实
     if (varIdx >= variables.size()) {
-        std::string newSubject = substituteVariable(rule.head.subject, bindings);
-        std::string newPredicate = substituteVariable(rule.head.predicate, bindings);
-        std::string newObject = substituteVariable(rule.head.object, bindings);
+        std::string newSubject = substituteVariable(rule.head.subject(), bindings);
+        std::string newPredicate = substituteVariable(rule.head.predicate(), bindings);
+        std::string newObject = substituteVariable(rule.head.object(), bindings);
 
         newFacts.emplace_back(newSubject, newPredicate, newObject);
         return;
@@ -306,17 +306,17 @@ void DatalogEngine::join_by_variable(
         // 根据变量位置选择适当的Trie
         if (position == 0) { // 主语位置
             // 如果宾语已绑定，就从posTrie中对应宾语的子节点中查找
-            if (!isVariable(triple.object) || bindings.find(triple.object) != bindings.end()) {
+            if (!isVariable(triple.object()) || bindings.find(triple.object()) != bindings.end()) {
                 it = new TrieIterator(posRoot);
-                // 对谓语进行seek
-                std::string predValue = substituteVariable(triple.predicate, bindings);
-                it->seek(predValue);
-                if (!it->atEnd() && it->key() == predValue) {
-                    // 对已确定的宾语进行seek
+                // 对谓语进行seek (使用ID)
+                uint32_t predId = substituteVariableToId(triple.predicate(), bindings);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    // 对已确定的宾语进行seek (使用ID)
                     TrieIterator objIt = it->open();
-                    std::string objValue = substituteVariable(triple.object, bindings);
-                    objIt.seek(objValue);
-                    if (!objIt.atEnd() && objIt.key() == objValue) {
+                    uint32_t objId = substituteVariableToId(triple.object(), bindings);
+                    objIt.seek(objId);
+                    if (!objIt.atEnd() && objIt.key() == objId) {
                         iterators.push_back(new TrieIterator(objIt.open()));
                     }
                 }
@@ -324,10 +324,10 @@ void DatalogEngine::join_by_variable(
             // 否则，从psoTrie中查找
             else {
                 it = new TrieIterator(psoRoot);
-                // 对谓语进行seek
-                std::string predValue = substituteVariable(triple.predicate, bindings);
-                it->seek(predValue);
-                if (!it->atEnd() && it->key() == predValue) {
+                // 对谓语进行seek (使用ID)
+                uint32_t predId = substituteVariableToId(triple.predicate(), bindings);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
                     TrieIterator subIt = it->open();
                     iterators.push_back(new TrieIterator(subIt));
                 }
@@ -336,17 +336,17 @@ void DatalogEngine::join_by_variable(
         // 这里暂时不考虑谓语为变量，即position == 1的情况
         else if (position == 2) { // 宾语位置
             // 如果主语已绑定，就从psoTrie中对应主语的子节点中查找
-            if (!isVariable(triple.subject) || bindings.find(triple.subject) != bindings.end()) {
+            if (!isVariable(triple.subject()) || bindings.find(triple.subject()) != bindings.end()) {
                 it = new TrieIterator(psoRoot);
-                // 对谓语进行seek
-                std::string predValue = substituteVariable(triple.predicate, bindings);
-                it->seek(predValue);
-                if (!it->atEnd() && it->key() == predValue) {
-                    // 对已确定的主语进行seek
+                // 对谓语进行seek (使用ID)
+                uint32_t predId = substituteVariableToId(triple.predicate(), bindings);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    // 对已确定的主语进行seek (使用ID)
                     TrieIterator subjIt = it->open();
-                    std::string subjValue = substituteVariable(triple.subject, bindings);
-                    subjIt.seek(subjValue);
-                    if (!subjIt.atEnd() && subjIt.key() == subjValue) {
+                    uint32_t subjId = substituteVariableToId(triple.subject(), bindings);
+                    subjIt.seek(subjId);
+                    if (!subjIt.atEnd() && subjIt.key() == subjId) {
                         iterators.push_back(new TrieIterator(subjIt.open()));
                     }
                 }
@@ -354,10 +354,10 @@ void DatalogEngine::join_by_variable(
             // 否则，从posTrie中查找
             else {
                 it = new TrieIterator(posRoot);
-                // 对谓语进行seek
-                std::string predValue = substituteVariable(triple.predicate, bindings);
-                it->seek(predValue);
-                if (!it->atEnd() && it->key() == predValue) {
+                // 对谓语进行seek (使用ID)
+                uint32_t predId = substituteVariableToId(triple.predicate(), bindings);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
                     TrieIterator objIt = it->open();
                     iterators.push_back(new TrieIterator(objIt));
                 }
@@ -373,7 +373,9 @@ void DatalogEngine::join_by_variable(
     if (!iterators.empty()) {
         LeapfrogJoin lf(iterators);
         while (!lf.atEnd()) {
-            std::string key = lf.key();
+            uint32_t keyId = lf.key();
+            // 将ID转换为字符串进行绑定
+            std::string key = store.getStringPool().getString(keyId);
             bindings[currentVar] = key;
 
             // 递归处理下一个变量
@@ -400,6 +402,35 @@ std::string DatalogEngine::substituteVariable(const std::string& term, const std
     return term;
 }
 
+// 新增：获取字符串对应的ID（带缓存优化）
+uint32_t DatalogEngine::getIdFromString(const std::string& str) const {
+    {
+        std::lock_guard<std::mutex> lock(cacheAccessMutex);
+        auto it = stringToIdCache.find(str);
+        if (it != stringToIdCache.end()) {
+            return it->second;
+        }
+    }
+    
+    uint32_t id = store.getStringPool().getId(str);
+    
+    {
+        std::lock_guard<std::mutex> lock(cacheAccessMutex);
+        // 限制缓存大小，避免内存无限增长
+        if (stringToIdCache.size() < 100000) {
+            stringToIdCache[str] = id;
+        }
+    }
+    
+    return id;
+}
+
+// 新增：替换变量并返回ID
+uint32_t DatalogEngine::substituteVariableToId(const std::string& term, const std::map<std::string, std::string>& bindings) const {
+    std::string value = substituteVariable(term, bindings);
+    return getIdFromString(value);
+}
+
 bool DatalogEngine::checkConflictingTriples(
     const std::map<std::string, std::string>& bindings,
     const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
@@ -424,9 +455,9 @@ bool DatalogEngine::checkConflictingTriples(
             if (posSet.count(0) && posSet.count(2)) {
                 // 构造实际的三元组
                 const Triple& pattern = rule.body[idx];
-                std::string subject = substituteVariable(pattern.subject, bindings);
-                std::string predicate = substituteVariable(pattern.predicate, bindings);
-                std::string object = substituteVariable(pattern.object, bindings);
+                std::string subject = substituteVariable(pattern.subject(), bindings);
+                std::string predicate = substituteVariable(pattern.predicate(), bindings);
+                std::string object = substituteVariable(pattern.object(), bindings);
 
                 Triple actualTriple(subject, predicate, object);
 
@@ -440,9 +471,9 @@ bool DatalogEngine::checkConflictingTriples(
 
     // 检查规则体中是否有只含常量不含变量的三元组模式
     for (const auto& triple : rule.body) {
-        if (!isVariable(triple.subject) && !isVariable(triple.predicate) && !isVariable(triple.object)) {
+        if (!isVariable(triple.subject()) && !isVariable(triple.predicate()) && !isVariable(triple.object())) {
             // 构造实际的三元组
-            Triple actualTriple(triple.subject, triple.predicate, triple.object);
+            Triple actualTriple(triple.subject(), triple.predicate(), triple.object());
 
             // 检查三元组是否存在于事实库中
             if (store.getNodeByTriple(actualTriple) != nullptr) {
@@ -454,10 +485,23 @@ bool DatalogEngine::checkConflictingTriples(
     return true;
 }
 
-// 简化的存在性检查方法（移除缓存以提高性能）
+// 优化的存在性检查方法，使用Triple ID哈希缓存
 bool DatalogEngine::tripleExists(const Triple& triple) {
-    // 直接查询数据库，避免缓存开销
-    return (store.getNodeByTriple(triple) != nullptr);
+    // 计算Triple ID的哈希值作为缓存key
+    uint64_t key = static_cast<uint64_t>(triple.getSubjectId()) << 32 | 
+                   static_cast<uint64_t>(triple.getPredicateId()) << 16 | 
+                   static_cast<uint64_t>(triple.getObjectId());
+    
+    bool exists;
+    if (tripleExistenceCache.get(key, exists)) {
+        return exists;
+    }
+    
+    // 直接查询数据库
+    exists = (store.getNodeByTriple(triple) != nullptr);
+    tripleExistenceCache.put(key, exists);
+    
+    return exists;
 }
 
 // 批处理方法（已移除以确保推理正确性）
@@ -465,10 +509,6 @@ bool DatalogEngine::tripleExists(const Triple& triple) {
 //     ... 已移除
 // }
 
-// 三元组转字符串方法
-std::string DatalogEngine::tripleToString(const Triple& triple) const {
-    return triple.subject + "|" + triple.predicate + "|" + triple.object;
-}
 
 // 分片锁相关方法
 size_t DatalogEngine::getShardIndex(const std::string& predicate) const {
