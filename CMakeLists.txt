@@ -25,6 +25,8 @@ add_executable(RDFPanda_Storage
         #BloomFilter.cpp
         #BloomFilter.h
         DatabaseConfig.h
+        LRUCache.cpp
+        LRUCache.h
 )
 
 # 添加测试目录

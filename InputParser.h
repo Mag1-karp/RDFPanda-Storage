@@ -21,6 +21,11 @@ public:
     std::vector<Triple> parseSQLiteTable(const std::string& dbName, const std::string& tableName);
     // 尝试MySQL
     std::vector<Triple> parseMySQLTable(const std::string& schemaName, const std::string& tableName);
+    // 并行化MySQL解析
+    std::vector<Triple> parseMySQLTableParallel(const std::string& schemaName, const std::string& tableName, size_t pageSize = 10000);
+    // 高级并行化MySQL解析（带连接池）
+    std::vector<Triple> parseMySQLTableAdvanced(const std::string& schemaName, const std::string& tableName, 
+                                               size_t pageSize = 10000, size_t maxConnections = 8);
 
     std::vector<Rule> parseDatalogFromFile(const std::string& filename);
     std::vector<Rule> parseDatalogFromConsole(const std::string& datalogString);

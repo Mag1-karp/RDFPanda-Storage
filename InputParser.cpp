@@ -7,6 +7,8 @@
 #include <future>
 #include <vector>
 #include <mutex>
+#include <queue>
+#include <atomic>
 
 #include "DatabaseConfig.h"
 
@@ -328,4 +330,268 @@ std::vector<Rule> InputParser::parseDatalogFromFile(const std::string &filename)
     }
 
     return rules;
+}
+
+std::vector<Triple> InputParser::parseMySQLTableParallel(const std::string& schemaName, const std::string& tableName, size_t pageSize) {
+    std::vector<Triple> allTriples;
+    
+    // 首先获取表的总行数
+    MYSQL* countConn = mysql_init(nullptr);
+    if (countConn == nullptr) {
+        std::cerr << "mysql_init() failed for count query" << std::endl;
+        return allTriples;
+    }
+    
+    if (mysql_real_connect(countConn, DB_HOST, DB_USER, DB_PASSWORD, schemaName.c_str(), DB_PORT, nullptr, 0) == nullptr) {
+        std::cerr << "mysql_real_connect() failed for count query: " << mysql_error(countConn) << std::endl;
+        mysql_close(countConn);
+        return allTriples;
+    }
+    
+    // 获取表的总行数
+    std::string countQuery = "SELECT COUNT(*) FROM " + tableName;
+    size_t totalRows = 0;
+    
+    if (mysql_query(countConn, countQuery.c_str()) == 0) {
+        MYSQL_RES* countRes = mysql_store_result(countConn);
+        if (countRes) {
+            MYSQL_ROW countRow = mysql_fetch_row(countRes);
+            if (countRow && countRow[0]) {
+                totalRows = std::stoul(countRow[0]);
+            }
+            mysql_free_result(countRes);
+        }
+    }
+    
+    mysql_close(countConn);
+    
+    if (totalRows == 0) {
+        std::cerr << "No data found in table " << tableName << std::endl;
+        return allTriples;
+    }
+    
+    // 计算分页数量和线程数
+    const size_t numThreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()), (totalRows + pageSize - 1) / pageSize);
+    const size_t actualPageSize = (totalRows + numThreads - 1) / numThreads;
+    
+    std::vector<std::vector<Triple>> threadResults(numThreads);
+    std::vector<std::thread> threads;
+    std::mutex resultMutex;
+    
+    // 并行处理函数
+    auto processPage = [&](size_t threadIndex, size_t offset, size_t limit) {
+        MYSQL* conn = mysql_init(nullptr);
+        if (conn == nullptr) {
+            std::cerr << "mysql_init() failed for thread " << threadIndex << std::endl;
+            return;
+        }
+        
+        if (mysql_real_connect(conn, DB_HOST, DB_USER, DB_PASSWORD, schemaName.c_str(), DB_PORT, nullptr, 0) == nullptr) {
+            std::cerr << "mysql_real_connect() failed for thread " << threadIndex << ": " << mysql_error(conn) << std::endl;
+            mysql_close(conn);
+            return;
+        }
+        
+        // 构建分页查询
+        std::string query = "SELECT subject, predicate, object FROM " + tableName + 
+                           " LIMIT " + std::to_string(limit) + " OFFSET " + std::to_string(offset);
+        
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "mysql_query() failed for thread " << threadIndex << ": " << mysql_error(conn) << std::endl;
+            mysql_close(conn);
+            return;
+        }
+        
+        MYSQL_RES* res = mysql_store_result(conn);
+        if (res == nullptr) {
+            std::cerr << "mysql_store_result() failed for thread " << threadIndex << ": " << mysql_error(conn) << std::endl;
+            mysql_close(conn);
+            return;
+        }
+        
+        std::vector<Triple> localTriples;
+        MYSQL_ROW row;
+        while ((row = mysql_fetch_row(res))) {
+            std::string subject = row[0] ? row[0] : "";
+            std::string predicate = row[1] ? row[1] : "";
+            std::string object = row[2] ? row[2] : "";
+            localTriples.emplace_back(subject, predicate, object);
+        }
+        
+        mysql_free_result(res);
+        mysql_close(conn);
+        
+        // 线程安全地存储结果
+        std::lock_guard<std::mutex> lock(resultMutex);
+        threadResults[threadIndex] = std::move(localTriples);
+    };
+    
+    // 启动工作线程
+    for (size_t i = 0; i < numThreads; ++i) {
+        size_t offset = i * actualPageSize;
+        size_t limit = std::min(actualPageSize, totalRows - offset);
+        
+        if (limit > 0) {
+            threads.emplace_back(processPage, i, offset, limit);
+        }
+    }
+    
+    // 等待所有线程完成
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    
+    // 合并结果
+    for (const auto& threadResult : threadResults) {
+        allTriples.insert(allTriples.end(), threadResult.begin(), threadResult.end());
+    }
+    
+    return allTriples;
+}
+
+std::vector<Triple> InputParser::parseMySQLTableAdvanced(const std::string& schemaName, const std::string& tableName, 
+                                                       size_t pageSize, size_t maxConnections) {
+    std::vector<Triple> allTriples;
+    
+    // 获取表的总行数
+    MYSQL* countConn = mysql_init(nullptr);
+    if (countConn == nullptr) {
+        std::cerr << "mysql_init() failed for count query" << std::endl;
+        return allTriples;
+    }
+    
+    if (mysql_real_connect(countConn, DB_HOST, DB_USER, DB_PASSWORD, schemaName.c_str(), DB_PORT, nullptr, 0) == nullptr) {
+        std::cerr << "mysql_real_connect() failed for count query: " << mysql_error(countConn) << std::endl;
+        mysql_close(countConn);
+        return allTriples;
+    }
+    
+    std::string countQuery = "SELECT COUNT(*) FROM " + tableName;
+    size_t totalRows = 0;
+    
+    if (mysql_query(countConn, countQuery.c_str()) == 0) {
+        MYSQL_RES* countRes = mysql_store_result(countConn);
+        if (countRes) {
+            MYSQL_ROW countRow = mysql_fetch_row(countRes);
+            if (countRow && countRow[0]) {
+                totalRows = std::stoul(countRow[0]);
+            }
+            mysql_free_result(countRes);
+        }
+    }
+    mysql_close(countConn);
+    
+    if (totalRows == 0) {
+        return allTriples;
+    }
+    
+    // 计算分页数量
+    const size_t numPages = (totalRows + pageSize - 1) / pageSize;
+    const size_t numThreads = std::min(maxConnections, numPages);
+    
+    // 线程安全的任务队列
+    std::queue<std::pair<size_t, size_t>> taskQueue; // (offset, limit)
+    for (size_t i = 0; i < numPages; ++i) {
+        size_t offset = i * pageSize;
+        size_t limit = std::min(pageSize, totalRows - offset);
+        taskQueue.push({offset, limit});
+    }
+    
+    std::mutex queueMutex;
+    std::mutex resultMutex;
+    std::vector<Triple> results;
+    std::atomic<size_t> completedTasks{0};
+    std::atomic<size_t> failedTasks{0};
+    
+    // 工作线程函数
+    auto workerThread = [&](size_t threadId) {
+        MYSQL* conn = mysql_init(nullptr);
+        if (conn == nullptr) {
+            std::cerr << "Thread " << threadId << ": mysql_init() failed" << std::endl;
+            return;
+        }
+        
+        // 设置连接超时
+        unsigned int timeout = 30;
+        mysql_options(conn, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
+        mysql_options(conn, MYSQL_OPT_READ_TIMEOUT, &timeout);
+        mysql_options(conn, MYSQL_OPT_WRITE_TIMEOUT, &timeout);
+        
+        if (mysql_real_connect(conn, DB_HOST, DB_USER, DB_PASSWORD, schemaName.c_str(), DB_PORT, nullptr, 0) == nullptr) {
+            std::cerr << "Thread " << threadId << ": mysql_real_connect() failed: " << mysql_error(conn) << std::endl;
+            mysql_close(conn);
+            return;
+        }
+        
+        while (true) {
+            std::pair<size_t, size_t> task;
+            
+            // 从队列中获取任务
+            {
+                std::lock_guard<std::mutex> lock(queueMutex);
+                if (taskQueue.empty()) {
+                    break;
+                }
+                task = taskQueue.front();
+                taskQueue.pop();
+            }
+            
+            // 执行任务
+            std::string query = "SELECT subject, predicate, object FROM " + tableName + 
+                               " LIMIT " + std::to_string(task.second) + " OFFSET " + std::to_string(task.first);
+            
+            if (mysql_query(conn, query.c_str()) != 0) {
+                std::cerr << "Thread " << threadId << ": Query failed: " << mysql_error(conn) << std::endl;
+                failedTasks++;
+                continue;
+            }
+            
+            MYSQL_RES* res = mysql_store_result(conn);
+            if (res == nullptr) {
+                std::cerr << "Thread " << threadId << ": mysql_store_result() failed: " << mysql_error(conn) << std::endl;
+                failedTasks++;
+                continue;
+            }
+            
+            std::vector<Triple> localTriples;
+            MYSQL_ROW row;
+            while ((row = mysql_fetch_row(res))) {
+                if (row[0] && row[1] && row[2]) {
+                    localTriples.emplace_back(row[0], row[1], row[2]);
+                }
+            }
+            
+            mysql_free_result(res);
+            
+            // 线程安全地添加结果
+            {
+                std::lock_guard<std::mutex> lock(resultMutex);
+                results.insert(results.end(), localTriples.begin(), localTriples.end());
+            }
+            
+            completedTasks++;
+        }
+        
+        mysql_close(conn);
+    };
+    
+    // 启动工作线程
+    std::vector<std::thread> threads;
+    for (size_t i = 0; i < numThreads; ++i) {
+        threads.emplace_back(workerThread, i);
+    }
+    
+    // 等待所有线程完成
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    
+    // 检查是否有失败的任务
+    if (failedTasks > 0) {
+        std::cerr << "Warning: " << failedTasks << " tasks failed during parallel MySQL parsing" << std::endl;
+    }
+    
+    std::cout << "Completed " << completedTasks << " tasks, processed " << results.size() << " triples" << std::endl;
+    
+    return results;
 }

@@ -295,9 +295,9 @@ int main() {
     // TestDatalogParser();
     // TestLargeFile();
     // startTimer();
-    // TestMillionTriples();
+    TestMillionTriples();
 
-    parseDatabaseTable("rdfpanda", "triples");
+    // parseDatabaseTable("rdfpanda", "triples");
     // connectSQLite("./SQLiteDb/test.db");
     // TestSQLiteTableParser();
 

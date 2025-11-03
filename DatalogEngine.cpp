@@ -69,15 +69,19 @@ void DatalogEngine::reason() {
         }));
     }
 
-    // 收集线程结果并合并
+    // 收集线程结果并立即存储，确保推理依赖的正确性
     for (auto& future : futures) {
         std::vector<Triple> newFacts = future.get();
-        std::lock_guard<std::mutex> lock(storeMutex);
+        
+        // 立即存储所有新事实，确保后续推理能够找到依赖
         for (const auto& triple : newFacts) {
-            if (store.getNodeByTriple(triple) == nullptr) {
-                // store.addTriple(triple);
+            std::lock_guard<std::mutex> lock(getShardMutex(triple.predicate));
+            if (!tripleExists(triple)) {
+                // 立即存储到数据库
+                store.addTriple(triple);
+                
+                // 添加到推理队列
                 newFactQueue.push(triple);
-                // newFactAdded = true;
             }
         }
     }
@@ -94,7 +98,7 @@ void DatalogEngine::reason() {
     // 工作线程
     auto worker = [&]() {
         while (true) {
-            // reasonCount++;
+            reasonCount++;
             Triple currentTriple("", "", "");
             {
                 std::unique_lock<std::mutex> lock(queueMutex);
@@ -104,25 +108,27 @@ void DatalogEngine::reason() {
                 newFactQueue.pop();
                 activeTaskCount++; // 增加活动任务计数
                 // reasonCount++; // 统计推理次数
-                if (newFactQueue.size() % 100 == 0) {
-                    std::cout << newFactQueue.size() << ' ' << reasonCount << std::endl;
-                }
+                // if (newFactQueue.size() % 100 == 0) {
+                //     std::cout << newFactQueue.size() << ' ' << reasonCount << std::endl;
+                // }
             }
 
-            // 将当前事实加入事实库
-            {
-                std::lock_guard<std::mutex> lock(storeMutex);
-                if (store.getNodeByTriple(currentTriple) == nullptr) {
-                    store.addTriple(currentTriple);
-                    // newFactAdded = true;
-                    // reasonCount++;
-                }
-                else {
-                    // 如果事实已存在，则跳过
-                    continue;
-                }
-                reasonCount++;
-            }
+            // // 检查当前事实是否已存在（应该已经存储了）
+            // bool alreadyExists = false;
+            // {
+            //     std::lock_guard<std::mutex> lock(getShardMutex(currentTriple.predicate));
+            //     alreadyExists = tripleExists(currentTriple);
+            //     if (!alreadyExists) {
+            //         // 这种情况不应该发生，但为了安全起见还是添加
+            //         store.addTriple(currentTriple);
+            //     }
+            //     // reasonCount++;
+            // }
+            //
+            // if (alreadyExists) {
+            //     // 如果事实已存在但我们仍然需要处理推理
+            //     // 因为可能其他线程已经添加了这个事实
+            // }
 
             // 处理 currentTriple，推理新事实并加锁入队
             // 根据rulesMap找到规则
@@ -145,19 +151,28 @@ void DatalogEngine::reason() {
 
                     // 调用leapfrogTriejoin推理新事实
                     std::vector<Triple> inferredFacts;
-                    leapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, inferredFacts, bindings);
+                    std::map<std::string, std::string> bindingsPtr = bindings;
+                    leapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, inferredFacts, bindingsPtr);
                     // reasonCount++;
 
-                    // 将新事实加入队列
-                    {
-                        std::lock_guard<std::mutex> lock(queueMutex);
-                        for (const auto& fact : inferredFacts) {
-                            // std::lock_guard<std::mutex> storeLock(storeMutex);
-                            if (store.getNodeByTriple(fact) == nullptr) {
-                                // store.addTriple(fact);
-                                newFactQueue.push(fact);
-                                // reasonCount++;
-                            }
+                    // 先存储新事实，再加入队列
+                    std::vector<Triple> newValidFacts;
+                    
+                    // 第一步：存储新事实
+                    for (const auto& fact : inferredFacts) {
+                        std::lock_guard<std::mutex> storeLock(getShardMutex(fact.predicate));
+                        if (!tripleExists(fact)) {
+                            // 立即存储到数据库
+                            store.addTriple(fact);
+                            newValidFacts.push_back(fact);
+                        }
+                    }
+                    
+                    // 第二步：加入推理队列
+                    if (!newValidFacts.empty()) {
+                        std::lock_guard<std::mutex> queueLock(queueMutex);
+                        for (const auto& fact : newValidFacts) {
+                            newFactQueue.push(fact);
                         }
                     }
                 }
@@ -437,4 +452,78 @@ bool DatalogEngine::checkConflictingTriples(
     }
 
     return true;
+}
+
+// 简化的存在性检查方法（移除缓存以提高性能）
+bool DatalogEngine::tripleExists(const Triple& triple) {
+    // 直接查询数据库，避免缓存开销
+    return (store.getNodeByTriple(triple) != nullptr);
+}
+
+// 批处理方法（已移除以确保推理正确性）
+// void DatalogEngine::processBatch(std::vector<Triple>& batch) {
+//     ... 已移除
+// }
+
+// 三元组转字符串方法
+std::string DatalogEngine::tripleToString(const Triple& triple) const {
+    return triple.subject + "|" + triple.predicate + "|" + triple.object;
+}
+
+// 分片锁相关方法
+size_t DatalogEngine::getShardIndex(const std::string& predicate) const {
+    std::hash<std::string> hasher;
+    return hasher(predicate) % SHARD_COUNT;
+}
+
+std::mutex& DatalogEngine::getShardMutex(const std::string& predicate) {
+    size_t index = getShardIndex(predicate);
+    return shardMutexes[index];
+}
+
+// 对象池相关方法
+std::vector<Triple>* DatalogEngine::getTripleVector() {
+    std::lock_guard<std::mutex> lock(poolMutex);
+    if (!tripleVectorPool.empty()) {
+        std::vector<Triple>* vec = tripleVectorPool.back();
+        tripleVectorPool.pop_back();
+        vec->clear();
+        return vec;
+    }
+    return new std::vector<Triple>();
+}
+
+void DatalogEngine::returnTripleVector(std::vector<Triple>* vec) {
+    if (vec) {
+        std::lock_guard<std::mutex> lock(poolMutex);
+        if (tripleVectorPool.size() < 50) {
+            vec->clear();
+            tripleVectorPool.push_back(vec);
+        } else {
+            delete vec;
+        }
+    }
+}
+
+std::map<std::string, std::string>* DatalogEngine::getBindingMap() {
+    std::lock_guard<std::mutex> lock(poolMutex);
+    if (!bindingMapPool.empty()) {
+        std::map<std::string, std::string>* map = bindingMapPool.back();
+        bindingMapPool.pop_back();
+        map->clear();
+        return map;
+    }
+    return new std::map<std::string, std::string>();
+}
+
+void DatalogEngine::returnBindingMap(std::map<std::string, std::string>* map) {
+    if (map) {
+        std::lock_guard<std::mutex> lock(poolMutex);
+        if (bindingMapPool.size() < 50) {
+            map->clear();
+            bindingMapPool.push_back(map);
+        } else {
+            delete map;
+        }
+    }
 }
