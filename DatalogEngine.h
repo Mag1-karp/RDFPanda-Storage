@@ -88,6 +88,15 @@ private:
     mutable std::unordered_map<std::string, uint32_t> stringToIdCache;
     mutable std::mutex cacheAccessMutex;
     
+    // 增量推理相关
+    std::unordered_set<uint64_t> processedTriples;  // 已处理的三元组哈希值
+    std::mutex processedMutex;
+    
+    // Semi-Naive评估相关
+    std::unordered_set<uint64_t> newFactsInCurrentIteration;  // 当前迭代的新事实
+    std::unordered_set<uint64_t> newFactsInPreviousIteration; // 上一迭代的新事实  
+    mutable std::mutex newFactsMutex;
+    
     // 批处理相关（已移除批处理逻辑以确保推理正确性）
     // static const size_t BATCH_SIZE = 100;
     // std::vector<Triple> batchBuffer;
@@ -142,9 +151,33 @@ private:
 
     static std::string substituteVariable(const std::string &term, const std::map<std::string, std::string> &bindings);
     
+    // 新增：Join顺序优化相关
+    struct VariableSelectivity {
+        std::string variable;
+        size_t candidateCount;
+        double selectivity;
+        
+        bool operator<(const VariableSelectivity& other) const {
+            return selectivity < other.selectivity;  // 选择性高的变量优先
+        }
+    };
+    
+    // 计算变量的选择性
+    std::vector<VariableSelectivity> computeVariableSelectivity(
+        const Rule& rule,
+        const std::set<std::string>& variables,
+        const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
+        const std::map<std::string, std::string>& bindings
+    ) const;
+    
     // 新增：获取ID的辅助函数
     uint32_t getIdFromString(const std::string& str) const;
     uint32_t substituteVariableToId(const std::string& term, const std::map<std::string, std::string>& bindings) const;
+    
+    // Semi-Naive评估相关方法
+    bool isTripleNewInCurrentIteration(const Triple& triple) const;
+    void markTripleAsNewInCurrentIteration(const Triple& triple);
+    void switchToNextIteration();
 
     bool checkConflictingTriples(const std::map<std::string, std::string>& bindings,
                                     const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,

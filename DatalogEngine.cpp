@@ -131,6 +131,19 @@ void DatalogEngine::reason() {
             // }
 
             // 处理 currentTriple，推理新事实并加锁入队
+            // 增量优化：检查该三元组是否已经处理过
+            uint64_t tripleHash = static_cast<uint64_t>(currentTriple.getSubjectId()) << 32 | 
+                                 static_cast<uint64_t>(currentTriple.getPredicateId()) << 16 | 
+                                 static_cast<uint64_t>(currentTriple.getObjectId());
+            
+            {
+                std::lock_guard<std::mutex> lock(processedMutex);
+                if (processedTriples.find(tripleHash) != processedTriples.end()) {
+                    activeTaskCount--;
+                    continue;  // 已处理过，跳过
+                }
+                processedTriples.insert(tripleHash);
+            }
             // 根据rulesMap找到规则
             auto it = rulesMap.find(currentTriple.getPredicateId());
             if (it != rulesMap.end()) {
@@ -158,12 +171,15 @@ void DatalogEngine::reason() {
                     // 先存储新事实，再加入队列
                     std::vector<Triple> newValidFacts;
                     
-                    // 第一步：存储新事实
+                    // 第一步：存储新事实  
                     for (const auto& fact : inferredFacts) {
                         std::lock_guard<std::mutex> storeLock(getShardMutex(fact.predicate()));
                         if (!tripleExists(fact)) {
                             // 立即存储到数据库
                             store.addTriple(fact);
+                            
+                            // 标记为当前迭代的新事实
+                            markTripleAsNewInCurrentIteration(fact);
                             newValidFacts.push_back(fact);
                         }
                     }
@@ -256,7 +272,7 @@ void DatalogEngine::leapfrogTriejoin(
     }
 
     // std::map<std::string, std::string> bindings;
-    // 对每个变量进行leapfrog join
+    // 对每个变量进行leapfrog join，使用优化的变量顺序
     join_by_variable(psoRoot, posRoot, rule, variables, varPositions, bindings, 0, newFacts);
 
     // std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
@@ -283,16 +299,20 @@ void DatalogEngine::join_by_variable(
         return;
     }
 
-    // 获取当前要处理的变量
-    auto varIt = variables.begin();
-    std::advance(varIt, varIdx);
-    std::string currentVar = *varIt;
-
-    // 如果当前变量已绑定，则直接处理下一个
-    if (bindings.find(currentVar) != bindings.end()) {
-        join_by_variable(psoRoot, posRoot, rule, variables, varPositions, bindings, varIdx + 1, newFacts);
+    // 优化：在每次递归调用时重新计算变量选择性
+    auto selectivities = computeVariableSelectivity(rule, variables, varPositions, bindings);
+    
+    // 如果没有未绑定的变量，结束递归
+    if (selectivities.empty()) {
+        std::string newSubject = substituteVariable(rule.head.subject(), bindings);
+        std::string newPredicate = substituteVariable(rule.head.predicate(), bindings);
+        std::string newObject = substituteVariable(rule.head.object(), bindings);
+        newFacts.emplace_back(newSubject, newPredicate, newObject);
         return;
     }
+    
+    // 选择选择性最高的变量（候选值最少）
+    std::string currentVar = selectivities[0].variable;
 
     // 对当前变量创建迭代器
     std::vector<TrieIterator*> iterators;
@@ -378,8 +398,8 @@ void DatalogEngine::join_by_variable(
             std::string key = store.getStringPool().getString(keyId);
             bindings[currentVar] = key;
 
-            // 递归处理下一个变量
-            join_by_variable(psoRoot, posRoot, rule, variables, varPositions, bindings, varIdx + 1, newFacts);
+            // 递归处理下一个变量（不需要varIdx+1，因为我们动态选择变量）
+            join_by_variable(psoRoot, posRoot, rule, variables, varPositions, bindings, 0, newFacts);
 
             lf.next();
         }
@@ -402,7 +422,61 @@ std::string DatalogEngine::substituteVariable(const std::string& term, const std
     return term;
 }
 
-// 新增：获取字符串对应的ID（带缓存优化）
+// 计算变量的选择性，用于优化join顺序
+std::vector<DatalogEngine::VariableSelectivity> DatalogEngine::computeVariableSelectivity(
+    const Rule& rule,
+    const std::set<std::string>& variables,
+    const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
+    const std::map<std::string, std::string>& bindings
+) const {
+    std::vector<VariableSelectivity> selectivities;
+    
+    for (const std::string& var : variables) {
+        if (bindings.find(var) != bindings.end()) {
+            continue;  // 已绑定的变量跳过
+        }
+        
+        VariableSelectivity vs;
+        vs.variable = var;
+        vs.candidateCount = 0;
+        
+        // 估算候选值数量
+        const auto& positions = varPositions.at(var);
+        size_t minCandidates = SIZE_MAX;
+        
+        for (const auto& pos : positions) {
+            int tripleIdx = pos.first;
+            int position = pos.second;
+            const Triple& triple = rule.body[tripleIdx];
+            
+            size_t candidates = 0;
+            
+            if (position == 0) {  // 主语位置
+                // 估算：根据谓语获取主语候选数
+                uint32_t predId = substituteVariableToId(triple.predicate(), bindings);
+                candidates = store.queryTripleIdsByPredicateId(predId).size();
+            } else if (position == 2) {  // 宾语位置  
+                // 估算：根据谓语获取宾语候选数
+                uint32_t predId = substituteVariableToId(triple.predicate(), bindings);
+                candidates = store.queryTripleIdsByPredicateId(predId).size();
+            }
+            
+            if (candidates > 0 && candidates < minCandidates) {
+                minCandidates = candidates;
+            }
+        }
+        
+        vs.candidateCount = (minCandidates == SIZE_MAX) ? 1000000 : minCandidates;
+        vs.selectivity = 1.0 / (vs.candidateCount + 1);  // 避免除零
+        
+        selectivities.push_back(vs);
+    }
+    
+    // 按选择性排序，选择性高的变量优先
+    std::sort(selectivities.begin(), selectivities.end());
+    
+    return selectivities;
+}
 uint32_t DatalogEngine::getIdFromString(const std::string& str) const {
     {
         std::lock_guard<std::mutex> lock(cacheAccessMutex);
@@ -423,6 +497,31 @@ uint32_t DatalogEngine::getIdFromString(const std::string& str) const {
     }
     
     return id;
+}
+
+// Semi-Naive评估相关方法实现
+bool DatalogEngine::isTripleNewInCurrentIteration(const Triple& triple) const {
+    uint64_t tripleHash = static_cast<uint64_t>(triple.getSubjectId()) << 32 | 
+                         static_cast<uint64_t>(triple.getPredicateId()) << 16 | 
+                         static_cast<uint64_t>(triple.getObjectId());
+    
+    std::lock_guard<std::mutex> lock(newFactsMutex);
+    return newFactsInPreviousIteration.find(tripleHash) != newFactsInPreviousIteration.end();
+}
+
+void DatalogEngine::markTripleAsNewInCurrentIteration(const Triple& triple) {
+    uint64_t tripleHash = static_cast<uint64_t>(triple.getSubjectId()) << 32 | 
+                         static_cast<uint64_t>(triple.getPredicateId()) << 16 | 
+                         static_cast<uint64_t>(triple.getObjectId());
+    
+    std::lock_guard<std::mutex> lock(newFactsMutex);
+    newFactsInCurrentIteration.insert(tripleHash);
+}
+
+void DatalogEngine::switchToNextIteration() {
+    std::lock_guard<std::mutex> lock(newFactsMutex);
+    newFactsInPreviousIteration = std::move(newFactsInCurrentIteration);
+    newFactsInCurrentIteration.clear();
 }
 
 // 新增：替换变量并返回ID
