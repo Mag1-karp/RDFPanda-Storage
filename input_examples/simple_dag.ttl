@@ -1,0 +1,16 @@
+@prefix p: <http://dag.org#> .
+
+# 简单的6节点DAG，形成如下结构：
+#     A
+#    / \
+#   B   C
+#  /   / \
+# D   E   F
+# 预期路径：A→B, A→C, A→D, A→E, A→F, B→D, C→E, C→F
+# 总共8条路径
+
+p:A p:edge p:B .
+p:A p:edge p:C .
+p:B p:edge p:D .
+p:C p:edge p:E .
+p:C p:edge p:F .

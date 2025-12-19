@@ -63,8 +63,10 @@ void DatalogEngine::reason() {
         reasonCount++;
         futures.push_back(std::async(std::launch::async, [&]() {
             std::vector<Triple> newFacts;
-            std::map<std::string, std::string> bindings;
-            leapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, newFacts, bindings);
+            std::map<std::string, uint32_t> bindingIds;  // 使用ID版本
+            // 使用ID优化版本的推理方法
+            leapfrogTriejoinOptimized(store.getTriePSORoot(), store.getTriePOSRoot(), rule, newFacts, bindingIds);
+            // leapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, newFacts, bindings);
             return newFacts;
         }));
     }
@@ -76,10 +78,8 @@ void DatalogEngine::reason() {
         // 立即存储所有新事实，确保后续推理能够找到依赖
         for (const auto& triple : newFacts) {
             std::lock_guard<std::mutex> lock(getShardMutex(triple.predicate()));
-            if (!tripleExists(triple)) {
-                // 立即存储到数据库
-                store.addTriple(triple);
-                
+            // 只有成功添加的新三元组才加入推理队列
+            if (store.addTriple(triple)) {
                 // 添加到推理队列
                 newFactQueue.push(triple);
             }
@@ -113,23 +113,6 @@ void DatalogEngine::reason() {
                 // }
             }
 
-            // // 检查当前事实是否已存在（应该已经存储了）
-            // bool alreadyExists = false;
-            // {
-            //     std::lock_guard<std::mutex> lock(getShardMutex(currentTriple.predicate));
-            //     alreadyExists = tripleExists(currentTriple);
-            //     if (!alreadyExists) {
-            //         // 这种情况不应该发生，但为了安全起见还是添加
-            //         store.addTriple(currentTriple);
-            //     }
-            //     // reasonCount++;
-            // }
-            //
-            // if (alreadyExists) {
-            //     // 如果事实已存在但我们仍然需要处理推理
-            //     // 因为可能其他线程已经添加了这个事实
-            // }
-
             // 处理 currentTriple，推理新事实并加锁入队
             // 增量优化：检查该三元组是否已经处理过
             uint64_t tripleHash = static_cast<uint64_t>(currentTriple.getSubjectId()) << 32 | 
@@ -153,19 +136,19 @@ void DatalogEngine::reason() {
                     const Rule& rule = rules[ruleIdx];
                     const Triple& pattern = rule.body[patternIdx];
 
-                    // 绑定变量
-                    std::map<std::string, std::string> bindings;
+                    // 绑定变量到ID
+                    std::map<std::string, uint32_t> bindingIds;
                     if (isVariable(pattern.subject())) {
-                        bindings[pattern.subject()] = currentTriple.subject();
+                        bindingIds[pattern.subject()] = currentTriple.getSubjectId();
                     }
                     if (isVariable(pattern.object())) {
-                        bindings[pattern.object()] = currentTriple.object();
+                        bindingIds[pattern.object()] = currentTriple.getObjectId();
                     }
 
-                    // 调用leapfrogTriejoin推理新事实
+                    // 调用ID优化版本的推理方法
                     std::vector<Triple> inferredFacts;
-                    std::map<std::string, std::string> bindingsPtr = bindings;
-                    leapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, inferredFacts, bindingsPtr);
+                    leapfrogTriejoinOptimized(store.getTriePSORoot(), store.getTriePOSRoot(), rule, inferredFacts, bindingIds);
+                    // leapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, inferredFacts, bindingsPtr);
                     // reasonCount++;
 
                     // 先存储新事实，再加入队列
@@ -174,10 +157,7 @@ void DatalogEngine::reason() {
                     // 第一步：存储新事实  
                     for (const auto& fact : inferredFacts) {
                         std::lock_guard<std::mutex> storeLock(getShardMutex(fact.predicate()));
-                        if (!tripleExists(fact)) {
-                            // 立即存储到数据库
-                            store.addTriple(fact);
-                            
+                        if (store.addTriple(fact)) {
                             // 标记为当前迭代的新事实
                             markTripleAsNewInCurrentIteration(fact);
                             newValidFacts.push_back(fact);
@@ -227,6 +207,147 @@ void DatalogEngine::reason() {
     std::cout << "Total triples in store:           " << store.getTripleCount() << std::endl;
     // 输出总共推理的次数
     std::cout << "Total reasoning count:            " << reasonCount.load() << std::endl;
+}
+
+void DatalogEngine::iterativeReason() {
+    bool newFactAdded = false;
+    int epoch = 0;
+
+    do {
+        // std::cout << "Epoch: " << epoch++ << std::endl;
+        newFactAdded = false;
+        std::queue<Triple> newFactQueue;
+
+        // 创建线程池
+        std::vector<std::future<std::vector<Triple>>> futures;
+        std::mutex storeMutex;
+
+        std::atomic<int> reasonCount(0);
+
+        // 遍历规则逐条应用
+        for (const auto& rule : rules) {
+            futures.push_back(std::async(std::launch::async, [&]() {
+                std::vector<Triple> newFacts;
+                std::map<std::string, uint32_t> bindingIds;
+                // leapfrogTriejoinOptimized(store.getTriePSORoot(), store.getTriePOSRoot(), rule, newFacts, bindingIds);
+                iterativeLeapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, newFacts, bindingIds);
+                return newFacts;
+            }));
+        }
+
+        // 收集线程结果并立即存储
+        for (auto& future : futures) {
+            std::vector<Triple> newFacts = future.get();
+
+            for (const auto& triple : newFacts) {
+                std::lock_guard<std::mutex> lock(getShardMutex(triple.predicate()));
+                if (store.addTriple(triple)) {
+                    newFactQueue.push(triple);
+                    newFactAdded = true;
+                }
+            }
+        }
+
+        // 并行化处理增量推理
+        if (!newFactQueue.empty()) {
+            std::atomic<bool> done(false);
+            std::atomic<int> activeTaskCount(0);
+            std::condition_variable cv;
+            std::mutex queueMutex;
+            const auto threadCount = std::thread::hardware_concurrency();
+            std::vector<std::thread> workers;
+
+            // 工作线程函数
+            auto worker = [&]() {
+                while (true) {
+                    Triple currentTriple("", "", "");
+                    {
+                        std::unique_lock<std::mutex> lock(queueMutex);
+                        cv.wait(lock, [&] { return !newFactQueue.empty() || done; });
+                        if (done && newFactQueue.empty()) break;
+                        currentTriple = newFactQueue.front();
+                        newFactQueue.pop();
+                        activeTaskCount++;
+                    }
+
+                    // 根据rulesMap找到相关规则
+                    auto it = rulesMap.find(currentTriple.getPredicateId());
+                    if (it != rulesMap.end()) {
+                        for (const auto& rulePair : it->second) {
+                            size_t ruleIdx = rulePair.first;
+                            size_t patternIdx = rulePair.second;
+                            const Rule& rule = rules[ruleIdx];
+                            const Triple& pattern = rule.body[patternIdx];
+
+                            // 绑定变量到ID
+                            std::map<std::string, uint32_t> bindingIds;
+                            if (isVariable(pattern.subject())) {
+                                bindingIds[pattern.subject()] = currentTriple.getSubjectId();
+                            }
+                            if (isVariable(pattern.object())) {
+                                bindingIds[pattern.object()] = currentTriple.getObjectId();
+                            }
+
+                            // 调用推理方法
+                            std::vector<Triple> inferredFacts;
+                            iterativeLeapfrogTriejoin(store.getTriePSORoot(), store.getTriePOSRoot(), rule, inferredFacts, bindingIds);
+
+                            // 先存储新事实，再加入队列
+                            std::vector<Triple> newValidFacts;
+                            
+                            // 第一步：存储新事实
+                            for (const auto& fact : inferredFacts) {
+                                std::lock_guard<std::mutex> storeLock(getShardMutex(fact.predicate()));
+                                if (store.addTriple(fact)) {
+                                    newValidFacts.push_back(fact);
+                                    newFactAdded = true;
+                                }
+                            }
+                            
+                            // 第二步：加入推理队列
+                            if (!newValidFacts.empty()) {
+                                std::lock_guard<std::mutex> queueLock(queueMutex);
+                                for (const auto& fact : newValidFacts) {
+                                    newFactQueue.push(fact);
+                                }
+                            }
+                        }
+                    }
+
+                    // 任务完成，减少活动任务计数
+                    activeTaskCount--;
+                }
+            };
+
+            // 启动工作线程池
+            workers.reserve(threadCount);
+            for (int i = 0; i < threadCount; ++i) {
+                workers.emplace_back(worker);
+            }
+
+            // 主线程监控并唤醒工作线程
+            while (true) {
+                {
+                    std::lock_guard<std::mutex> lock(queueMutex);
+                    if (newFactQueue.empty() && activeTaskCount == 0) {
+                        break;
+                    }
+                }
+                cv.notify_all();
+                std::this_thread::yield();
+            }
+
+            // 结束所有线程
+            done = true;
+            cv.notify_all();
+            for (auto& t : workers) {
+                t.join();
+            }
+        }
+
+    } while (newFactAdded);
+
+    std::cout << "Total triples in store: " << store.getTripleCount() << std::endl;
 }
 
 bool DatalogEngine::isVariable(const std::string& term) {
@@ -477,6 +598,331 @@ std::vector<DatalogEngine::VariableSelectivity> DatalogEngine::computeVariableSe
     
     return selectivities;
 }
+
+// 基于迭代器的变量连接实现
+void DatalogEngine::join_by_variable_iterative(
+    TrieNode* psoRoot, TrieNode* posRoot,
+    const Rule& rule,
+    std::vector<Triple>& newFacts,
+    std::map<std::string, uint32_t>& bindingIds
+) {
+    std::set<std::string> variables;
+    std::map<std::string, std::vector<std::pair<int, int>>> varPositions;
+    
+    for (size_t i = 0; i < rule.body.size(); i++) {
+        const Triple& triple = rule.body[i];
+        if (isVariable(triple.subject())) {
+            variables.insert(triple.subject());
+            varPositions[triple.subject()].push_back({i, 0});
+        }
+        if (isVariable(triple.predicate())) {
+            variables.insert(triple.predicate());
+            varPositions[triple.predicate()].push_back({i, 1});
+        }
+        if (isVariable(triple.object())) {
+            variables.insert(triple.object());
+            varPositions[triple.object()].push_back({i, 2});
+        }
+    }
+
+    auto selectivities = computeVariableSelectivityOptimized(rule, variables, varPositions, bindingIds);
+    
+    if (selectivities.empty()) {
+        uint32_t newSubjectId = substituteVariableId(rule.head.subject(), bindingIds);
+        uint32_t newPredicateId = substituteVariableId(rule.head.predicate(), bindingIds);
+        uint32_t newObjectId = substituteVariableId(rule.head.object(), bindingIds);
+        newFacts.emplace_back(newSubjectId, newPredicateId, newObjectId);
+        return;
+    }
+
+    std::vector<std::string> orderedVariables;
+    for (const auto& sel : selectivities) {
+        orderedVariables.push_back(sel.variable);
+    }
+
+    VariableJoinIterator iterator(psoRoot, posRoot, rule, orderedVariables, varPositions, bindingIds, this);
+    
+    while (!iterator.atEnd()) {
+        auto currentBindings = iterator.getCurrentBindings();
+        uint32_t newSubjectId = substituteVariableId(rule.head.subject(), currentBindings);
+        uint32_t newPredicateId = substituteVariableId(rule.head.predicate(), currentBindings);
+        uint32_t newObjectId = substituteVariableId(rule.head.object(), currentBindings);
+        newFacts.emplace_back(newSubjectId, newPredicateId, newObjectId);
+        
+        if (!iterator.next()) {
+            break;
+        }
+    }
+}
+
+DatalogEngine::VariableJoinIterator::VariableJoinIterator(
+    TrieNode* psoRoot, TrieNode* posRoot, const Rule& rule,
+    const std::vector<std::string>& orderedVars,
+    const std::map<std::string, std::vector<std::pair<int, int>>>& varPos,
+    const std::map<std::string, uint32_t>& initialBindings,
+    DatalogEngine* eng
+) : psoRoot(psoRoot), posRoot(posRoot), rule(rule), orderedVariables(orderedVars), 
+    varPositions(varPos), bindingIds(initialBindings), engine(eng), finished(false) {
+    
+    variableStates.resize(orderedVariables.size());
+    for (size_t i = 0; i < orderedVariables.size(); ++i) {
+        variableStates[i].variable = orderedVariables[i];
+        variableStates[i].currentIteratorIndex = 0;
+        variableStates[i].currentValue = 0;
+        variableStates[i].atEnd = true;
+    }
+    
+    for (size_t i = 0; i < orderedVariables.size(); ++i) {
+        initializeVariableIterators(i);
+        if (variableStates[i].atEnd) {
+            finished = true;
+            return;
+        }
+        bindingIds[variableStates[i].variable] = variableStates[i].currentValue;
+    }
+}
+
+DatalogEngine::VariableJoinIterator::~VariableJoinIterator() {
+    for (auto& varState : variableStates) {
+        for (auto* iter : varState.iterators) {
+            delete iter;
+        }
+    }
+}
+
+void DatalogEngine::VariableJoinIterator::initializeVariableIterators(size_t varIndex) {
+    if (varIndex >= variableStates.size()) return;
+    
+    VariableState& varState = variableStates[varIndex];
+    const std::string& var = varState.variable;
+    
+    for (auto* iter : varState.iterators) delete iter;
+    varState.iterators.clear();
+    
+    const auto& positions = varPositions.at(var);
+    for (const auto& pos : positions) {
+        int tripleIdx = pos.first;
+        int position = pos.second;
+        const Triple& triple = rule.body[tripleIdx];
+        
+        TrieIterator* it = nullptr;
+        
+        if (position == 0) {
+            if (!isVariable(triple.object()) || bindingIds.find(triple.object()) != bindingIds.end()) {
+                it = new TrieIterator(posRoot);
+                uint32_t predId = engine->substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator objIt = it->open();
+                    uint32_t objId = engine->substituteVariableId(triple.object(), bindingIds);
+                    objIt.seek(objId);
+                    if (!objIt.atEnd() && objIt.key() == objId) {
+                        varState.iterators.push_back(new TrieIterator(objIt.open()));
+                    }
+                }
+                delete it;
+            } else {
+                it = new TrieIterator(psoRoot);
+                uint32_t predId = engine->substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator subIt = it->open();
+                    varState.iterators.push_back(new TrieIterator(subIt));
+                }
+                delete it;
+            }
+        } else if (position == 2) {
+            if (!isVariable(triple.subject()) || bindingIds.find(triple.subject()) != bindingIds.end()) {
+                it = new TrieIterator(psoRoot);
+                uint32_t predId = engine->substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator subjIt = it->open();
+                    uint32_t subjId = engine->substituteVariableId(triple.subject(), bindingIds);
+                    subjIt.seek(subjId);
+                    if (!subjIt.atEnd() && subjIt.key() == subjId) {
+                        varState.iterators.push_back(new TrieIterator(subjIt.open()));
+                    }
+                }
+                delete it;
+            } else {
+                it = new TrieIterator(posRoot);
+                uint32_t predId = engine->substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator objIt = it->open();
+                    varState.iterators.push_back(new TrieIterator(objIt));
+                }
+                delete it;
+            }
+        }
+    }
+    
+    varState.currentIteratorIndex = 0;
+    varState.atEnd = varState.iterators.empty();
+    
+    if (!varState.atEnd) {
+        if (varState.iterators.size() == 1) {
+            if (!varState.iterators[0]->atEnd()) {
+                varState.currentValue = varState.iterators[0]->key();
+            } else {
+                varState.atEnd = true;
+            }
+        } else {
+            LeapfrogJoin lf(varState.iterators);
+            if (!lf.atEnd()) {
+                varState.currentValue = lf.key();
+            } else {
+                varState.atEnd = true;
+            }
+        }
+    }
+}
+
+bool DatalogEngine::VariableJoinIterator::advanceVariable(size_t varIndex) {
+    if (varIndex >= variableStates.size()) return false;
+    
+    VariableState& varState = variableStates[varIndex];
+    if (varState.atEnd || varState.iterators.empty()) return false;
+    
+    if (varState.iterators.size() == 1) {
+        varState.iterators[0]->next();
+        if (varState.iterators[0]->atEnd()) {
+            varState.atEnd = true;
+            return false;
+        }
+        varState.currentValue = varState.iterators[0]->key();
+        return true;
+    } else {
+        LeapfrogJoin lf(varState.iterators);
+        lf.next();
+        if (lf.atEnd()) {
+            varState.atEnd = true;
+            return false;
+        }
+        varState.currentValue = lf.key();
+        return true;
+    }
+}
+
+bool DatalogEngine::VariableJoinIterator::next() {
+    if (finished) return false;
+    
+    for (int varIndex = variableStates.size() - 1; varIndex >= 0; --varIndex) {
+        if (advanceVariable(varIndex)) {
+            bindingIds[variableStates[varIndex].variable] = variableStates[varIndex].currentValue;
+            
+            for (size_t i = varIndex + 1; i < variableStates.size(); ++i) {
+                initializeVariableIterators(i);
+                if (variableStates[i].atEnd) break;
+                bindingIds[variableStates[i].variable] = variableStates[i].currentValue;
+            }
+            
+            bool allValid = true;
+            for (size_t i = varIndex + 1; i < variableStates.size(); ++i) {
+                if (variableStates[i].atEnd) {
+                    allValid = false;
+                    break;
+                }
+            }
+            
+            if (allValid) return true;
+        } else {
+            variableStates[varIndex].atEnd = true;
+            bindingIds.erase(variableStates[varIndex].variable);
+        }
+    }
+    
+    finished = true;
+    return false;
+}
+
+void DatalogEngine::iterativeLeapfrogTriejoin(
+    TrieNode* psoRoot, TrieNode* posRoot,
+    const Rule& rule,
+    std::vector<Triple>& newFacts,
+    std::map<std::string, uint32_t>& bindingIds
+) {
+    join_by_variable_iterative(psoRoot, posRoot, rule, newFacts, bindingIds);
+}
+
+// ID优化版本的leapfrogTriejoin
+void DatalogEngine::leapfrogTriejoinOptimized(
+    TrieNode* psoRoot, TrieNode* posRoot,
+    const Rule& rule,
+    std::vector<Triple>& newFacts,
+    std::map<std::string, uint32_t>& bindingIds
+) {
+    std::set<std::string> variables;
+    std::map<std::string, std::vector<std::pair<int, int>>> varPositions;
+
+    for (int i = 0; i < rule.body.size(); i++) {
+        const Triple& triple = rule.body[i];
+        if (isVariable(triple.subject())) {
+            variables.insert(triple.subject());
+            varPositions[triple.subject()].emplace_back(i, 0);
+        }
+        if (isVariable(triple.predicate())) {
+            variables.insert(triple.predicate());
+            varPositions[triple.predicate()].emplace_back(i, 1);
+        }
+        if (isVariable(triple.object())) {
+            variables.insert(triple.object());
+            varPositions[triple.object()].emplace_back(i, 2);
+        }
+    }
+
+    // 创建ID版本的冲突检查
+    auto checkConflictingTriplesOptimized = [&](const std::map<std::string, uint32_t>& ids) -> bool {
+        for (const auto& [var, id] : ids) {
+            if (varPositions.find(var) == varPositions.end()) {
+                continue;
+            }
+
+            const auto& positions = varPositions.at(var);
+            std::map<int, std::set<int>> idxToPos;
+
+            for (const auto& [idx, pos] : positions) {
+                idxToPos[idx].insert(pos);
+            }
+
+            for (const auto& [idx, posSet] : idxToPos) {
+                if (posSet.count(0) && posSet.count(2)) {
+                    const Triple& pattern = rule.body[idx];
+                    uint32_t subjectId = substituteVariableId(pattern.subject(), ids);
+                    uint32_t predicateId = substituteVariableId(pattern.predicate(), ids);
+                    uint32_t objectId = substituteVariableId(pattern.object(), ids);
+
+                    Triple actualTriple(subjectId, predicateId, objectId);
+
+                    if (store.getNodeByTriple(actualTriple) != nullptr) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        for (const auto& triple : rule.body) {
+            if (!isVariable(triple.subject()) && !isVariable(triple.predicate()) && !isVariable(triple.object())) {
+                Triple actualTriple(triple.subject(), triple.predicate(), triple.object());
+
+                if (store.getNodeByTriple(actualTriple) != nullptr) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+
+    if (!checkConflictingTriplesOptimized(bindingIds)) {
+        return;
+    }
+
+    join_by_variable_optimized(psoRoot, posRoot, rule, variables, varPositions, bindingIds, 0, newFacts);
+    // iterativeLeapfrogTriejoin(psoRoot, posRoot, rule, newFacts, bindingIds);
+}
+
 uint32_t DatalogEngine::getIdFromString(const std::string& str) const {
     {
         std::lock_guard<std::mutex> lock(cacheAccessMutex);
@@ -665,4 +1111,306 @@ void DatalogEngine::returnBindingMap(std::map<std::string, std::string>* map) {
             delete map;
         }
     }
+}
+/*
+// 迭代器式推理实现
+void DatalogEngine::iterativeLeapfrogTriejoin(
+    TrieNode* psoRoot, TrieNode* posRoot,
+    const Rule& rule,
+    std::vector<Triple>& newFacts,
+    std::map<std::string, uint32_t>& bindingIds
+) {
+    // 收集变量和位置信息
+    std::set<std::string> variables;
+    std::map<std::string, std::vector<std::pair<int, int>>> varPositions;
+
+    // 收集规则体中的变量及其位置
+    for (int i = 0; i < rule.body.size(); i++) {
+        const Triple& triple = rule.body[i];
+        if (isVariable(triple.subject())) {
+            variables.insert(triple.subject());
+            varPositions[triple.subject()].emplace_back(i, 0);
+        }
+        if (isVariable(triple.predicate())) {
+            variables.insert(triple.predicate());
+            varPositions[triple.predicate()].emplace_back(i, 1);
+        }
+        if (isVariable(triple.object())) {
+            variables.insert(triple.object());
+            varPositions[triple.object()].emplace_back(i, 2);
+        }
+    }
+
+    // if (!checkConflictingTriples(bindingIds, varPositions, rule)) {
+    //     return;
+    // }
+
+    // 计算变量选择性并排序
+    auto selectivities = computeVariableSelectivityOptimized(rule, variables, varPositions, bindingIds);
+
+    // 按选择性排序变量
+    std::vector<std::string> orderedVars;
+    for (const auto& vs : selectivities) {
+        orderedVars.push_back(vs.variable);
+    }
+
+    // 使用 LeapfrogJoin 替代嵌套循环
+    std::vector<TrieIterator*> iterators;
+    for (const auto& var : orderedVars) {
+        for (const auto& pos : varPositions[var]) {
+            int tripleIdx = pos.first;
+            int position = pos.second;
+            const Triple& triple = rule.body[tripleIdx];
+
+            TrieIterator* it = nullptr;
+            if (position == 0) { // 主语位置
+                it = new TrieIterator(psoRoot);
+            } else if (position == 2) { // 宾语位置
+                it = new TrieIterator(posRoot);
+            }
+
+            if (it) {
+                iterators.push_back(it);
+            }
+        }
+    }
+
+    LeapfrogJoin lf(iterators);
+    std::function<void(size_t)> iterate = [&](size_t depth) {
+        if (depth == orderedVars.size()) {
+            uint32_t newSubjectId = substituteVariableId(rule.head.subject(), bindingIds);
+            uint32_t newPredicateId = substituteVariableId(rule.head.predicate(), bindingIds);
+            uint32_t newObjectId = substituteVariableId(rule.head.object(), bindingIds);
+            newFacts.emplace_back(newSubjectId, newPredicateId, newObjectId);
+            return;
+        }
+
+        const std::string& var = orderedVars[depth];
+        while (!lf.atEnd()) {
+            bindingIds[var] = lf.key();
+            iterate(depth + 1);
+            lf.next();
+        }
+        bindingIds.erase(var);
+    };
+
+    iterate(0);
+
+    // 清理迭代器
+    for (auto it : iterators) {
+        delete it;
+    }
+}*/
+
+// ID优化版本的join_by_variable
+void DatalogEngine::join_by_variable_optimized(
+    TrieNode* psoRoot, TrieNode* posRoot,
+    const Rule& rule,
+    const std::set<std::string>& variables,
+    const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
+    std::map<std::string, uint32_t>& bindingIds,
+    int varIdx,
+    std::vector<Triple>& newFacts
+) {
+    // 当所有变量都已绑定时，生成新的事实
+    if (varIdx >= variables.size()) {
+        uint32_t newSubjectId = substituteVariableId(rule.head.subject(), bindingIds);
+        uint32_t newPredicateId = substituteVariableId(rule.head.predicate(), bindingIds);
+        uint32_t newObjectId = substituteVariableId(rule.head.object(), bindingIds);
+
+        newFacts.emplace_back(newSubjectId, newPredicateId, newObjectId);
+        return;
+    }
+
+    // 优化：在每次递归调用时重新计算变量选择性
+    auto selectivities = computeVariableSelectivityOptimized(rule, variables, varPositions, bindingIds);
+    
+    // 如果没有未绑定的变量，结束递归
+    if (selectivities.empty()) {
+        uint32_t newSubjectId = substituteVariableId(rule.head.subject(), bindingIds);
+        uint32_t newPredicateId = substituteVariableId(rule.head.predicate(), bindingIds);
+        uint32_t newObjectId = substituteVariableId(rule.head.object(), bindingIds);
+        newFacts.emplace_back(newSubjectId, newPredicateId, newObjectId);
+        return;
+    }
+    
+    // 选择选择性最高的变量（候选值最少）
+    std::string currentVar = selectivities[0].variable;
+
+    // 对当前变量创建迭代器
+    std::vector<TrieIterator*> iterators;
+    for (const auto& pos : varPositions.at(currentVar)) {
+        int tripleIdx = pos.first;
+        int position = pos.second;
+        const Triple& triple = rule.body[tripleIdx];
+
+        TrieIterator* it = nullptr;
+
+        // 根据变量位置选择适当的Trie
+        if (position == 0) { // 主语位置
+            // 如果宾语已绑定，就从posTrie中对应宾语的子节点中查找
+            if (!isVariable(triple.object()) || bindingIds.find(triple.object()) != bindingIds.end()) {
+                it = new TrieIterator(posRoot);
+                uint32_t predId = substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator objIt = it->open();
+                    uint32_t objId = substituteVariableId(triple.object(), bindingIds);
+                    objIt.seek(objId);
+                    if (!objIt.atEnd() && objIt.key() == objId) {
+                        iterators.push_back(new TrieIterator(objIt.open()));
+                    }
+                }
+            }
+            // 否则，从psoTrie中查找
+            else {
+                it = new TrieIterator(psoRoot);
+                uint32_t predId = substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator subIt = it->open();
+                    iterators.push_back(new TrieIterator(subIt));
+                }
+            }
+        }
+        else if (position == 2) { // 宾语位置
+            // 如果主语已绑定，就从psoTrie中对应主语的子节点中查找
+            if (!isVariable(triple.subject()) || bindingIds.find(triple.subject()) != bindingIds.end()) {
+                it = new TrieIterator(psoRoot);
+                uint32_t predId = substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator subjIt = it->open();
+                    uint32_t subjId = substituteVariableId(triple.subject(), bindingIds);
+                    subjIt.seek(subjId);
+                    if (!subjIt.atEnd() && subjIt.key() == subjId) {
+                        iterators.push_back(new TrieIterator(subjIt.open()));
+                    }
+                }
+            }
+            // 否则，从posTrie中查找
+            else {
+                it = new TrieIterator(posRoot);
+                uint32_t predId = substituteVariableId(triple.predicate(), bindingIds);
+                it->seek(predId);
+                if (!it->atEnd() && it->key() == predId) {
+                    TrieIterator objIt = it->open();
+                    iterators.push_back(new TrieIterator(objIt));
+                }
+            }
+        }
+
+        if (it && iterators.empty()) {
+            delete it;
+        }
+    }
+
+    // 对当前变量执行leapfrog join
+    if (!iterators.empty()) {
+        LeapfrogJoin lf(iterators);
+        while (!lf.atEnd()) {
+            uint32_t keyId = lf.key();
+            bindingIds[currentVar] = keyId;
+
+            // 递归处理下一个变量
+            join_by_variable_optimized(psoRoot, posRoot, rule, variables, varPositions, bindingIds, 0, newFacts);
+
+            lf.next();
+        }
+
+        // 清理迭代器
+        for (auto it : iterators) {
+            delete it;
+        }
+    }
+
+    // 删除当前变量的绑定
+    bindingIds.erase(currentVar);
+}
+
+// ID优化版本的辅助函数
+uint32_t DatalogEngine::substituteVariableId(const std::string& term, const std::map<std::string, uint32_t>& bindingIds) {
+    if (isVariable(term) && bindingIds.find(term) != bindingIds.end()) {
+        return bindingIds.at(term);
+    }
+    // 如果不是变量或未绑定，从字符串池获取ID
+    return Triple::getStringPool()->getId(term);
+}
+
+// ID优化版本的选择性计算
+std::vector<DatalogEngine::VariableSelectivity> DatalogEngine::computeVariableSelectivityOptimized(
+    const Rule& rule,
+    const std::set<std::string>& variables,
+    const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
+    const std::map<std::string, uint32_t>& bindingIds
+) const {
+    std::vector<VariableSelectivity> selectivities;
+    
+    for (const std::string& var : variables) {
+        if (bindingIds.find(var) != bindingIds.end()) {
+            continue;  // 已绑定的变量跳过
+        }
+        
+        VariableSelectivity vs;
+        vs.variable = var;
+        vs.candidateCount = 0;
+        
+        // 估算候选值数量
+        const auto& positions = varPositions.at(var);
+        size_t minCandidates = SIZE_MAX;
+        
+        for (const auto& pos : positions) {
+            int tripleIdx = pos.first;
+            int position = pos.second;
+            const Triple& triple = rule.body[tripleIdx];
+            
+            size_t candidates = 0;
+            
+            if (position == 0) {  // 主语位置
+                // 估算：根据谓语获取主语候选数
+                uint32_t predId = substituteVariableId(triple.predicate(), bindingIds);
+                candidates = store.queryTripleIdsByPredicateId(predId).size();
+            } else if (position == 2) {  // 宾语位置  
+                // 估算：根据谓语获取宾语候选数
+                uint32_t predId = substituteVariableId(triple.predicate(), bindingIds);
+                candidates = store.queryTripleIdsByPredicateId(predId).size();
+            }
+            
+            if (candidates > 0 && candidates < minCandidates) {
+                minCandidates = candidates;
+            }
+        }
+        
+        vs.candidateCount = (minCandidates == SIZE_MAX) ? 1000000 : minCandidates;
+        vs.selectivity = 1.0 / (vs.candidateCount + 1);  // 避免除零
+        
+        selectivities.push_back(vs);
+    }
+    
+    // 按选择性排序，选择性高的变量优先
+    std::sort(selectivities.begin(), selectivities.end());
+
+    auto result = selectivities;
+
+    return result;
+}
+
+void DatalogEngine::printTriples() {
+    // 遍历存储中的所有三元组并打印
+    const auto& allTripleIds = store.getAllTripleIds();
+    
+    std::cout << "=== All Triples in Store (" << allTripleIds.size() << " total) ===" << std::endl;
+    
+    for (size_t i = 0; i < allTripleIds.size(); ++i) {
+        const auto& tripleId = allTripleIds[i];
+        
+        // 将ID转换回字符串
+        std::string subject = store.getStringPool().getString(tripleId.subject_id);
+        std::string predicate = store.getStringPool().getString(tripleId.predicate_id);
+        std::string object = store.getStringPool().getString(tripleId.object_id);
+        
+        std::cout << i + 1 << ": " << subject << " " << predicate << " " << object << std::endl;
+    }
+    
+    std::cout << "=== End of Triple List ===" << std::endl;
 }

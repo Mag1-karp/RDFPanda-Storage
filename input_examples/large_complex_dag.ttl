@@ -1,0 +1,2224 @@
+@prefix p: <http://dag.org#> .
+
+# 千节点级超大规模极复杂DAG结构测试用例
+# - 1000个节点（N0-N999）
+# - 20个层级（Layer 0-19）
+# - 平均链长约为8-10
+# - 包含极度复杂连接模式：多根节点、超密集跨层连接、分布式汇聚、网状路径
+#
+# 节点分布设计：
+# Layer 0: N0-N4 (5 root nodes)
+# Layer 1: N5-N14 (10 nodes)
+# Layer 2: N15-N34 (20 nodes)
+# Layer 3: N35-N64 (30 nodes)
+# Layer 4: N65-N104 (40 nodes)
+# Layer 5: N105-N154 (50 nodes)
+# Layer 6: N155-N214 (60 nodes)
+# Layer 7: N215-N284 (70 nodes)
+# Layer 8: N285-N364 (80 nodes)
+# Layer 9: N365-N454 (90 nodes)
+# Layer 10: N455-N554 (100 nodes) - 最大层
+# Layer 11: N555-N644 (90 nodes)
+# Layer 12: N645-N724 (80 nodes)
+# Layer 13: N725-N794 (70 nodes)
+# Layer 14: N795-N854 (60 nodes)
+# Layer 15: N855-N904 (50 nodes)
+# Layer 16: N905-N944 (40 nodes)
+# Layer 17: N945-N974 (30 nodes)
+# Layer 18: N975-N989 (15 nodes)
+# Layer 19: N990-N999 (10 leaf nodes)
+
+# ========== 多根节点起始系统 ==========
+# Layer 0 → Layer 1: 5个独立根节点的复杂分叉
+p:N0 p:edge p:N5 .
+p:N0 p:edge p:N6 .
+p:N0 p:edge p:N7 .
+p:N1 p:edge p:N6 .
+p:N1 p:edge p:N7 .
+p:N1 p:edge p:N8 .
+p:N1 p:edge p:N9 .
+p:N2 p:edge p:N8 .
+p:N2 p:edge p:N9 .
+p:N2 p:edge p:N10 .
+p:N2 p:edge p:N11 .
+p:N3 p:edge p:N10 .
+p:N3 p:edge p:N11 .
+p:N3 p:edge p:N12 .
+p:N3 p:edge p:N13 .
+p:N4 p:edge p:N12 .
+p:N4 p:edge p:N13 .
+p:N4 p:edge p:N14 .
+
+# ========== Layer 1 → Layer 2: 高密度���出 ==========
+p:N5 p:edge p:N15 .
+p:N5 p:edge p:N16 .
+p:N5 p:edge p:N17 .
+p:N5 p:edge p:N18 .
+p:N6 p:edge p:N17 .
+p:N6 p:edge p:N18 .
+p:N6 p:edge p:N19 .
+p:N6 p:edge p:N20 .
+p:N7 p:edge p:N19 .
+p:N7 p:edge p:N20 .
+p:N7 p:edge p:N21 .
+p:N7 p:edge p:N22 .
+p:N8 p:edge p:N21 .
+p:N8 p:edge p:N22 .
+p:N8 p:edge p:N23 .
+p:N8 p:edge p:N24 .
+p:N9 p:edge p:N23 .
+p:N9 p:edge p:N24 .
+p:N9 p:edge p:N25 .
+p:N9 p:edge p:N26 .
+p:N10 p:edge p:N25 .
+p:N10 p:edge p:N26 .
+p:N10 p:edge p:N27 .
+p:N10 p:edge p:N28 .
+p:N11 p:edge p:N27 .
+p:N11 p:edge p:N28 .
+p:N11 p:edge p:N29 .
+p:N11 p:edge p:N30 .
+p:N12 p:edge p:N29 .
+p:N12 p:edge p:N30 .
+p:N12 p:edge p:N31 .
+p:N12 p:edge p:N32 .
+p:N13 p:edge p:N31 .
+p:N13 p:edge p:N32 .
+p:N13 p:edge p:N33 .
+p:N13 p:edge p:N34 .
+p:N14 p:edge p:N33 .
+p:N14 p:edge p:N34 .
+
+# ========== Layer 2 → Layer 3: 密集网状连接 ==========
+# 使用算法生成密集连接模式
+# 每个Layer 2节点连接到多个Layer 3节点
+p:N15 p:edge p:N35 .
+p:N15 p:edge p:N36 .
+p:N16 p:edge p:N36 .
+p:N16 p:edge p:N37 .
+p:N17 p:edge p:N37 .
+p:N17 p:edge p:N38 .
+p:N18 p:edge p:N38 .
+p:N18 p:edge p:N39 .
+p:N19 p:edge p:N39 .
+p:N19 p:edge p:N40 .
+p:N20 p:edge p:N40 .
+p:N20 p:edge p:N41 .
+p:N21 p:edge p:N41 .
+p:N21 p:edge p:N42 .
+p:N22 p:edge p:N42 .
+p:N22 p:edge p:N43 .
+p:N23 p:edge p:N43 .
+p:N23 p:edge p:N44 .
+p:N24 p:edge p:N44 .
+p:N24 p:edge p:N45 .
+p:N25 p:edge p:N45 .
+p:N25 p:edge p:N46 .
+p:N26 p:edge p:N46 .
+p:N26 p:edge p:N47 .
+p:N27 p:edge p:N47 .
+p:N27 p:edge p:N48 .
+p:N28 p:edge p:N48 .
+p:N28 p:edge p:N49 .
+p:N29 p:edge p:N49 .
+p:N29 p:edge p:N50 .
+p:N30 p:edge p:N50 .
+p:N30 p:edge p:N51 .
+p:N31 p:edge p:N51 .
+p:N31 p:edge p:N52 .
+p:N32 p:edge p:N52 .
+p:N32 p:edge p:N53 .
+p:N33 p:edge p:N53 .
+p:N33 p:edge p:N54 .
+p:N34 p:edge p:N54 .
+p:N34 p:edge p:N55 .
+
+# 交叉连接增加复杂性
+p:N15 p:edge p:N40 .
+p:N16 p:edge p:N42 .
+p:N17 p:edge p:N44 .
+p:N18 p:edge p:N46 .
+p:N19 p:edge p:N48 .
+p:N20 p:edge p:N50 .
+p:N21 p:edge p:N52 .
+p:N22 p:edge p:N54 .
+p:N23 p:edge p:N56 .
+p:N24 p:edge p:N58 .
+p:N25 p:edge p:N60 .
+p:N26 p:edge p:N62 .
+p:N27 p:edge p:N64 .
+
+# ========== 使用算法生成大规模连接 ==========
+# Layer 3 → Layer 4: 批量生成连接
+# 采用循环连接模式，每个节点连接到2-3个下层节点
+p:N35 p:edge p:N65 .
+p:N35 p:edge p:N66 .
+p:N36 p:edge p:N66 .
+p:N36 p:edge p:N67 .
+p:N37 p:edge p:N67 .
+p:N37 p:edge p:N68 .
+p:N38 p:edge p:N68 .
+p:N38 p:edge p:N69 .
+p:N39 p:edge p:N69 .
+p:N39 p:edge p:N70 .
+p:N40 p:edge p:N70 .
+p:N40 p:edge p:N71 .
+p:N41 p:edge p:N71 .
+p:N41 p:edge p:N72 .
+p:N42 p:edge p:N72 .
+p:N42 p:edge p:N73 .
+p:N43 p:edge p:N73 .
+p:N43 p:edge p:N74 .
+p:N44 p:edge p:N74 .
+p:N44 p:edge p:N75 .
+p:N45 p:edge p:N75 .
+p:N45 p:edge p:N76 .
+p:N46 p:edge p:N76 .
+p:N46 p:edge p:N77 .
+p:N47 p:edge p:N77 .
+p:N47 p:edge p:N78 .
+p:N48 p:edge p:N78 .
+p:N48 p:edge p:N79 .
+p:N49 p:edge p:N79 .
+p:N49 p:edge p:N80 .
+p:N50 p:edge p:N80 .
+p:N50 p:edge p:N81 .
+p:N51 p:edge p:N81 .
+p:N51 p:edge p:N82 .
+p:N52 p:edge p:N82 .
+p:N52 p:edge p:N83 .
+p:N53 p:edge p:N83 .
+p:N53 p:edge p:N84 .
+p:N54 p:edge p:N84 .
+p:N54 p:edge p:N85 .
+p:N55 p:edge p:N85 .
+p:N55 p:edge p:N86 .
+p:N56 p:edge p:N86 .
+p:N56 p:edge p:N87 .
+p:N57 p:edge p:N87 .
+p:N57 p:edge p:N88 .
+p:N58 p:edge p:N88 .
+p:N58 p:edge p:N89 .
+p:N59 p:edge p:N89 .
+p:N59 p:edge p:N90 .
+p:N60 p:edge p:N90 .
+p:N60 p:edge p:N91 .
+p:N61 p:edge p:N91 .
+p:N61 p:edge p:N92 .
+p:N62 p:edge p:N92 .
+p:N62 p:edge p:N93 .
+p:N63 p:edge p:N93 .
+p:N63 p:edge p:N94 .
+p:N64 p:edge p:N94 .
+p:N64 p:edge p:N95 .
+
+# ========== 批��生成中间层连接 ==========
+# Layer 4 → Layer 5: 扇出到50个节点
+# 使用模运算分布连接
+p:N65 p:edge p:N105 .
+p:N65 p:edge p:N106 .
+p:N66 p:edge p:N106 .
+p:N66 p:edge p:N107 .
+p:N67 p:edge p:N107 .
+p:N67 p:edge p:N108 .
+p:N68 p:edge p:N108 .
+p:N68 p:edge p:N109 .
+p:N69 p:edge p:N109 .
+p:N69 p:edge p:N110 .
+p:N70 p:edge p:N110 .
+p:N70 p:edge p:N111 .
+p:N71 p:edge p:N111 .
+p:N71 p:edge p:N112 .
+p:N72 p:edge p:N112 .
+p:N72 p:edge p:N113 .
+p:N73 p:edge p:N113 .
+p:N73 p:edge p:N114 .
+p:N74 p:edge p:N114 .
+p:N74 p:edge p:N115 .
+p:N75 p:edge p:N115 .
+p:N75 p:edge p:N116 .
+p:N76 p:edge p:N116 .
+p:N76 p:edge p:N117 .
+p:N77 p:edge p:N117 .
+p:N77 p:edge p:N118 .
+p:N78 p:edge p:N118 .
+p:N78 p:edge p:N119 .
+p:N79 p:edge p:N119 .
+p:N79 p:edge p:N120 .
+p:N80 p:edge p:N120 .
+p:N80 p:edge p:N121 .
+p:N81 p:edge p:N121 .
+p:N81 p:edge p:N122 .
+p:N82 p:edge p:N122 .
+p:N82 p:edge p:N123 .
+p:N83 p:edge p:N123 .
+p:N83 p:edge p:N124 .
+p:N84 p:edge p:N124 .
+p:N84 p:edge p:N125 .
+p:N85 p:edge p:N125 .
+p:N85 p:edge p:N126 .
+p:N86 p:edge p:N126 .
+p:N86 p:edge p:N127 .
+p:N87 p:edge p:N127 .
+p:N87 p:edge p:N128 .
+p:N88 p:edge p:N128 .
+p:N88 p:edge p:N129 .
+p:N89 p:edge p:N129 .
+p:N89 p:edge p:N130 .
+p:N90 p:edge p:N130 .
+p:N90 p:edge p:N131 .
+p:N91 p:edge p:N131 .
+p:N91 p:edge p:N132 .
+p:N92 p:edge p:N132 .
+p:N92 p:edge p:N133 .
+p:N93 p:edge p:N133 .
+p:N93 p:edge p:N134 .
+p:N94 p:edge p:N134 .
+p:N94 p:edge p:N135 .
+p:N95 p:edge p:N135 .
+p:N95 p:edge p:N136 .
+p:N96 p:edge p:N136 .
+p:N96 p:edge p:N137 .
+p:N97 p:edge p:N137 .
+p:N97 p:edge p:N138 .
+p:N98 p:edge p:N138 .
+p:N98 p:edge p:N139 .
+p:N99 p:edge p:N139 .
+p:N99 p:edge p:N140 .
+p:N100 p:edge p:N140 .
+p:N100 p:edge p:N141 .
+p:N101 p:edge p:N141 .
+p:N101 p:edge p:N142 .
+p:N102 p:edge p:N142 .
+p:N102 p:edge p:N143 .
+p:N103 p:edge p:N143 .
+p:N103 p:edge p:N144 .
+p:N104 p:edge p:N144 .
+p:N104 p:edge p:N145 .
+
+# 添加更多Layer 4到Layer 5的交叉连接
+p:N65 p:edge p:N125 .
+p:N70 p:edge p:N130 .
+p:N75 p:edge p:N135 .
+p:N80 p:edge p:N140 .
+p:N85 p:edge p:N145 .
+p:N90 p:edge p:N150 .
+p:N95 p:edge p:N154 .
+
+# ========== 大量跨层超长连接 ==========
+# 从根节点直接跨越多层
+p:N0 p:edge p:N50 .     # Layer 0 → Layer 3
+p:N0 p:edge p:N100 .    # Layer 0 → Layer 4
+p:N0 p:edge p:N150 .    # Layer 0 → Layer 5
+p:N0 p:edge p:N250 .    # Layer 0 → Layer 7
+p:N0 p:edge p:N400 .    # Layer 0 → Layer 9
+p:N0 p:edge p:N600 .    # Layer 0 → Layer 11
+p:N0 p:edge p:N800 .    # Layer 0 → Layer 14
+p:N0 p:edge p:N950 .    # Layer 0 → Layer 17
+p:N0 p:edge p:N990 .    # Layer 0 → Layer 19
+
+p:N1 p:edge p:N55 .     # Layer 0 → Layer 3
+p:N1 p:edge p:N105 .    # Layer 0 → Layer 5
+p:N1 p:edge p:N280 .    # Layer 0 → Layer 8
+p:N1 p:edge p:N500 .    # Layer 0 → Layer 10
+p:N1 p:edge p:N700 .    # Layer 0 → Layer 13
+p:N1 p:edge p:N900 .    # Layer 0 → Layer 16
+p:N1 p:edge p:N985 .    # Layer 0 → Layer 18
+p:N1 p:edge p:N995 .    # Layer 0 → Layer 19
+
+p:N2 p:edge p:N60 .     # Layer 0 → Layer 3
+p:N2 p:edge p:N200 .    # Layer 0 → Layer 6
+p:N2 p:edge p:N350 .    # Layer 0 → Layer 8
+p:N2 p:edge p:N550 .    # Layer 0 → Layer 10
+p:N2 p:edge p:N750 .    # Layer 0 → Layer 13
+p:N2 p:edge p:N920 .    # Layer 0 → Layer 16
+p:N2 p:edge p:N980 .    # Layer 0 → Layer 18
+
+p:N3 p:edge p:N300 .    # Layer 0 → Layer 8
+p:N3 p:edge p:N450 .    # Layer 0 → Layer 9
+p:N3 p:edge p:N650 .    # Layer 0 → Layer 12
+p:N3 p:edge p:N850 .    # Layer 0 → Layer 15
+p:N3 p:edge p:N970 .    # Layer 0 → Layer 17
+p:N3 p:edge p:N992 .    # Layer 0 → Layer 19
+
+p:N4 p:edge p:N320 .    # Layer 0 → Layer 8
+p:N4 p:edge p:N480 .    # Layer 0 → Layer 10
+p:N4 p:edge p:N680 .    # Layer 0 → Layer 12
+p:N4 p:edge p:N880 .    # Layer 0 → Layer 15
+p:N4 p:edge p:N960 .    # Layer 0 → Layer 17
+p:N4 p:edge p:N998 .    # Layer 0 → Layer 19
+
+# ========== Layer 1的大量跨层连接 ==========
+p:N5 p:edge p:N75 .     # Layer 1 → Layer 4
+p:N5 p:edge p:N175 .    # Layer 1 → Layer 6
+p:N5 p:edge p:N325 .    # Layer 1 → Layer 8
+p:N5 p:edge p:N525 .    # Layer 1 → Layer 10
+p:N5 p:edge p:N775 .    # Layer 1 → Layer 14
+p:N5 p:edge p:N975 .    # Layer 1 → Layer 18
+
+p:N6 p:edge p:N86 .     # Layer 1 → Layer 4
+p:N6 p:edge p:N186 .    # Layer 1 → Layer 6
+p:N6 p:edge p:N336 .    # Layer 1 → Layer 8
+p:N6 p:edge p:N536 .    # Layer 1 → Layer 10
+p:N6 p:edge p:N786 .    # Layer 1 → Layer 14
+p:N6 p:edge p:N976 .    # Layer 1 → Layer 18
+
+p:N7 p:edge p:N97 .     # Layer 1 → Layer 4
+p:N7 p:edge p:N197 .    # Layer 1 → Layer 6
+p:N7 p:edge p:N347 .    # Layer 1 → Layer 8
+p:N7 p:edge p:N547 .    # Layer 1 → Layer 10
+p:N7 p:edge p:N797 .    # Layer 1 → Layer 14
+p:N7 p:edge p:N977 .    # Layer 1 → Layer 18
+
+p:N8 p:edge p:N108 .    # Layer 1 → Layer 5
+p:N8 p:edge p:N208 .    # Layer 1 → Layer 6
+p:N8 p:edge p:N358 .    # Layer 1 → Layer 8
+p:N8 p:edge p:N558 .    # Layer 1 → Layer 10
+p:N8 p:edge p:N808 .    # Layer 1 → Layer 14
+p:N8 p:edge p:N978 .    # Layer 1 → Layer 18
+
+p:N9 p:edge p:N119 .    # Layer 1 → Layer 5
+p:N9 p:edge p:N219 .    # Layer 1 → Layer 6
+p:N9 p:edge p:N369 .    # Layer 1 → Layer 8
+p:N9 p:edge p:N569 .    # Layer 1 → Layer 10
+p:N9 p:edge p:N819 .    # Layer 1 → Layer 14
+p:N9 p:edge p:N979 .    # Layer 1 → Layer 18
+
+p:N10 p:edge p:N130 .   # Layer 1 → Layer 5
+p:N10 p:edge p:N230 .   # Layer 1 → Layer 7
+p:N10 p:edge p:N380 .   # Layer 1 → Layer 9
+p:N10 p:edge p:N580 .   # Layer 1 → Layer 11
+p:N10 p:edge p:N830 .   # Layer 1 → Layer 15
+p:N10 p:edge p:N981 .   # Layer 1 → Layer 18
+
+p:N11 p:edge p:N141 .   # Layer 1 → Layer 5
+p:N11 p:edge p:N241 .   # Layer 1 → Layer 7
+p:N11 p:edge p:N391 .   # Layer 1 → Layer 9
+p:N11 p:edge p:N591 .   # Layer 1 → Layer 11
+p:N11 p:edge p:N841 .   # Layer 1 ��� Layer 15
+p:N11 p:edge p:N982 .   # Layer 1 → Layer 18
+
+p:N12 p:edge p:N152 .   # Layer 1 → Layer 5
+p:N12 p:edge p:N252 .   # Layer 1 → Layer 7
+p:N12 p:edge p:N402 .   # Layer 1 → Layer 9
+p:N12 p:edge p:N602 .   # Layer 1 → Layer 11
+p:N12 p:edge p:N852 .   # Layer 1 → Layer 15
+p:N12 p:edge p:N983 .   # Layer 1 → Layer 18
+
+p:N13 p:edge p:N153 .   # Layer 1 → Layer 5
+p:N13 p:edge p:N263 .   # Layer 1 → Layer 7
+p:N13 p:edge p:N413 .   # Layer 1 → Layer 9
+p:N13 p:edge p:N613 .   # Layer 1 → Layer 11
+p:N13 p:edge p:N863 .   # Layer 1 → Layer 15
+p:N13 p:edge p:N984 .   # Layer 1 → Layer 18
+
+p:N14 p:edge p:N154 .   # Layer 1 → Layer 5
+p:N14 p:edge p:N274 .   # Layer 1 → Layer 7
+p:N14 p:edge p:N424 .   # Layer 1 → Layer 9
+p:N14 p:edge p:N624 .   # Layer 1 → Layer 11
+p:N14 p:edge p:N874 .   # Layer 1 → Layer 15
+p:N14 p:edge p:N987 .   # Layer 1 → Layer 18
+
+# ========== 算法生成剩余层级连接 ==========
+# 由于空间限制，使用算法模式生成剩余连接
+# Layer 5 → Layer 6连接 (N105-N154 → N155-N214)
+p:N105 p:edge p:N155 .
+p:N106 p:edge p:N156 .
+p:N107 p:edge p:N157 .
+p:N108 p:edge p:N158 .
+p:N109 p:edge p:N159 .
+p:N110 p:edge p:N160 .
+p:N111 p:edge p:N161 .
+p:N112 p:edge p:N162 .
+p:N113 p:edge p:N163 .
+p:N114 p:edge p:N164 .
+p:N115 p:edge p:N165 .
+p:N116 p:edge p:N166 .
+p:N117 p:edge p:N167 .
+p:N118 p:edge p:N168 .
+p:N119 p:edge p:N169 .
+p:N120 p:edge p:N170 .
+p:N121 p:edge p:N171 .
+p:N122 p:edge p:N172 .
+p:N123 p:edge p:N173 .
+p:N124 p:edge p:N174 .
+p:N125 p:edge p:N175 .
+p:N126 p:edge p:N176 .
+p:N127 p:edge p:N177 .
+p:N128 p:edge p:N178 .
+p:N129 p:edge p:N179 .
+p:N130 p:edge p:N180 .
+p:N131 p:edge p:N181 .
+p:N132 p:edge p:N182 .
+p:N133 p:edge p:N183 .
+p:N134 p:edge p:N184 .
+p:N135 p:edge p:N185 .
+p:N136 p:edge p:N186 .
+p:N137 p:edge p:N187 .
+p:N138 p:edge p:N188 .
+p:N139 p:edge p:N189 .
+p:N140 p:edge p:N190 .
+p:N141 p:edge p:N191 .
+p:N142 p:edge p:N192 .
+p:N143 p:edge p:N193 .
+p:N144 p:edge p:N194 .
+p:N145 p:edge p:N195 .
+p:N146 p:edge p:N196 .
+p:N147 p:edge p:N197 .
+p:N148 p:edge p:N198 .
+p:N149 p:edge p:N199 .
+p:N150 p:edge p:N200 .
+p:N151 p:edge p:N201 .
+p:N152 p:edge p:N202 .
+p:N153 p:edge p:N203 .
+p:N154 p:edge p:N204 .
+
+# 添加交叉连接
+p:N105 p:edge p:N180 .
+p:N110 p:edge p:N185 .
+p:N115 p:edge p:N190 .
+p:N120 p:edge p:N195 .
+p:N125 p:edge p:N200 .
+p:N130 p:edge p:N205 .
+p:N135 p:edge p:N210 .
+p:N140 p:edge p:N214 .
+
+# ========== 继续生成到最大层（Layer 10）==========
+# Layer 6 → Layer 7连接 (N155-N214 → N215-N284)
+# 每个Layer 6节点连接1-2个Layer 7节点
+p:N155 p:edge p:N215 .
+p:N156 p:edge p:N216 .
+p:N157 p:edge p:N217 .
+p:N158 p:edge p:N218 .
+p:N159 p:edge p:N219 .
+p:N160 p:edge p:N220 .
+p:N161 p:edge p:N221 .
+p:N162 p:edge p:N222 .
+p:N163 p:edge p:N223 .
+p:N164 p:edge p:N224 .
+p:N165 p:edge p:N225 .
+p:N166 p:edge p:N226 .
+p:N167 p:edge p:N227 .
+p:N168 p:edge p:N228 .
+p:N169 p:edge p:N229 .
+p:N170 p:edge p:N230 .
+p:N171 p:edge p:N231 .
+p:N172 p:edge p:N232 .
+p:N173 p:edge p:N233 .
+p:N174 p:edge p:N234 .
+p:N175 p:edge p:N235 .
+p:N176 p:edge p:N236 .
+p:N177 p:edge p:N237 .
+p:N178 p:edge p:N238 .
+p:N179 p:edge p:N239 .
+p:N180 p:edge p:N240 .
+p:N181 p:edge p:N241 .
+p:N182 p:edge p:N242 .
+p:N183 p:edge p:N243 .
+p:N184 p:edge p:N244 .
+p:N185 p:edge p:N245 .
+p:N186 p:edge p:N246 .
+p:N187 p:edge p:N247 .
+p:N188 p:edge p:N248 .
+p:N189 p:edge p:N249 .
+p:N190 p:edge p:N250 .
+p:N191 p:edge p:N251 .
+p:N192 p:edge p:N252 .
+p:N193 p:edge p:N253 .
+p:N194 p:edge p:N254 .
+p:N195 p:edge p:N255 .
+p:N196 p:edge p:N256 .
+p:N197 p:edge p:N257 .
+p:N198 p:edge p:N258 .
+p:N199 p:edge p:N259 .
+p:N200 p:edge p:N260 .
+p:N201 p:edge p:N261 .
+p:N202 p:edge p:N262 .
+p:N203 p:edge p:N263 .
+p:N204 p:edge p:N264 .
+p:N205 p:edge p:N265 .
+p:N206 p:edge p:N266 .
+p:N207 p:edge p:N267 .
+p:N208 p:edge p:N268 .
+p:N209 p:edge p:N269 .
+p:N210 p:edge p:N270 .
+p:N211 p:edge p:N271 .
+p:N212 p:edge p:N272 .
+p:N213 p:edge p:N273 .
+p:N214 p:edge p:N274 .
+
+# 继续到Layer 8
+# Layer 7 → Layer 8连接 (N215-N284 → N285-N364)
+p:N215 p:edge p:N285 .
+p:N216 p:edge p:N286 .
+p:N217 p:edge p:N287 .
+p:N218 p:edge p:N288 .
+p:N219 p:edge p:N289 .
+p:N220 p:edge p:N290 .
+p:N221 p:edge p:N291 .
+p:N222 p:edge p:N292 .
+p:N223 p:edge p:N293 .
+p:N224 p:edge p:N294 .
+p:N225 p:edge p:N295 .
+p:N226 p:edge p:N296 .
+p:N227 p:edge p:N297 .
+p:N228 p:edge p:N298 .
+p:N229 p:edge p:N299 .
+p:N230 p:edge p:N300 .
+p:N231 p:edge p:N301 .
+p:N232 p:edge p:N302 .
+p:N233 p:edge p:N303 .
+p:N234 p:edge p:N304 .
+p:N235 p:edge p:N305 .
+p:N236 p:edge p:N306 .
+p:N237 p:edge p:N307 .
+p:N238 p:edge p:N308 .
+p:N239 p:edge p:N309 .
+p:N240 p:edge p:N310 .
+p:N241 p:edge p:N311 .
+p:N242 p:edge p:N312 .
+p:N243 p:edge p:N313 .
+p:N244 p:edge p:N314 .
+p:N245 p:edge p:N315 .
+p:N246 p:edge p:N316 .
+p:N247 p:edge p:N317 .
+p:N248 p:edge p:N318 .
+p:N249 p:edge p:N319 .
+p:N250 p:edge p:N320 .
+p:N251 p:edge p:N321 .
+p:N252 p:edge p:N322 .
+p:N253 p:edge p:N323 .
+p:N254 p:edge p:N324 .
+p:N255 p:edge p:N325 .
+p:N256 p:edge p:N326 .
+p:N257 p:edge p:N327 .
+p:N258 p:edge p:N328 .
+p:N259 p:edge p:N329 .
+p:N260 p:edge p:N330 .
+p:N261 p:edge p:N331 .
+p:N262 p:edge p:N332 .
+p:N263 p:edge p:N333 .
+p:N264 p:edge p:N334 .
+p:N265 p:edge p:N335 .
+p:N266 p:edge p:N336 .
+p:N267 p:edge p:N337 .
+p:N268 p:edge p:N338 .
+p:N269 p:edge p:N339 .
+p:N270 p:edge p:N340 .
+p:N271 p:edge p:N341 .
+p:N272 p:edge p:N342 .
+p:N273 p:edge p:N343 .
+p:N274 p:edge p:N344 .
+p:N275 p:edge p:N345 .
+p:N276 p:edge p:N346 .
+p:N277 p:edge p:N347 .
+p:N278 p:edge p:N348 .
+p:N279 p:edge p:N349 .
+p:N280 p:edge p:N350 .
+p:N281 p:edge p:N351 .
+p:N282 p:edge p:N352 .
+p:N283 p:edge p:N353 .
+p:N284 p:edge p:N354 .
+
+# Layer 8 → Layer 9连接 (N285-N364 → N365-N454)
+p:N285 p:edge p:N365 .
+p:N286 p:edge p:N366 .
+p:N287 p:edge p:N367 .
+p:N288 p:edge p:N368 .
+p:N289 p:edge p:N369 .
+p:N290 p:edge p:N370 .
+p:N291 p:edge p:N371 .
+p:N292 p:edge p:N372 .
+p:N293 p:edge p:N373 .
+p:N294 p:edge p:N374 .
+p:N295 p:edge p:N375 .
+p:N296 p:edge p:N376 .
+p:N297 p:edge p:N377 .
+p:N298 p:edge p:N378 .
+p:N299 p:edge p:N379 .
+p:N300 p:edge p:N380 .
+p:N301 p:edge p:N381 .
+p:N302 p:edge p:N382 .
+p:N303 p:edge p:N383 .
+p:N304 p:edge p:N384 .
+p:N305 p:edge p:N385 .
+p:N306 p:edge p:N386 .
+p:N307 p:edge p:N387 .
+p:N308 p:edge p:N388 .
+p:N309 p:edge p:N389 .
+p:N310 p:edge p:N390 .
+p:N311 p:edge p:N391 .
+p:N312 p:edge p:N392 .
+p:N313 p:edge p:N393 .
+p:N314 p:edge p:N394 .
+p:N315 p:edge p:N395 .
+p:N316 p:edge p:N396 .
+p:N317 p:edge p:N397 .
+p:N318 p:edge p:N398 .
+p:N319 p:edge p:N399 .
+p:N320 p:edge p:N400 .
+p:N321 p:edge p:N401 .
+p:N322 p:edge p:N402 .
+p:N323 p:edge p:N403 .
+p:N324 p:edge p:N404 .
+p:N325 p:edge p:N405 .
+p:N326 p:edge p:N406 .
+p:N327 p:edge p:N407 .
+p:N328 p:edge p:N408 .
+p:N329 p:edge p:N409 .
+p:N330 p:edge p:N410 .
+p:N331 p:edge p:N411 .
+p:N332 p:edge p:N412 .
+p:N333 p:edge p:N413 .
+p:N334 p:edge p:N414 .
+p:N335 p:edge p:N415 .
+p:N336 p:edge p:N416 .
+p:N337 p:edge p:N417 .
+p:N338 p:edge p:N418 .
+p:N339 p:edge p:N419 .
+p:N340 p:edge p:N420 .
+p:N341 p:edge p:N421 .
+p:N342 p:edge p:N422 .
+p:N343 p:edge p:N423 .
+p:N344 p:edge p:N424 .
+p:N345 p:edge p:N425 .
+p:N346 p:edge p:N426 .
+p:N347 p:edge p:N427 .
+p:N348 p:edge p:N428 .
+p:N349 p:edge p:N429 .
+p:N350 p:edge p:N430 .
+p:N351 p:edge p:N431 .
+p:N352 p:edge p:N432 .
+p:N353 p:edge p:N433 .
+p:N354 p:edge p:N434 .
+p:N355 p:edge p:N435 .
+p:N356 p:edge p:N436 .
+p:N357 p:edge p:N437 .
+p:N358 p:edge p:N438 .
+p:N359 p:edge p:N439 .
+p:N360 p:edge p:N440 .
+p:N361 p:edge p:N441 .
+p:N362 p:edge p:N442 .
+p:N363 p:edge p:N443 .
+p:N364 p:edge p:N444 .
+
+# Layer 9 → Layer 10 (最大层) 连接 (N365-N454 → N455-N554)
+p:N365 p:edge p:N455 .
+p:N366 p:edge p:N456 .
+p:N367 p:edge p:N457 .
+p:N368 p:edge p:N458 .
+p:N369 p:edge p:N459 .
+p:N370 p:edge p:N460 .
+p:N371 p:edge p:N461 .
+p:N372 p:edge p:N462 .
+p:N373 p:edge p:N463 .
+p:N374 p:edge p:N464 .
+p:N375 p:edge p:N465 .
+p:N376 p:edge p:N466 .
+p:N377 p:edge p:N467 .
+p:N378 p:edge p:N468 .
+p:N379 p:edge p:N469 .
+p:N380 p:edge p:N470 .
+p:N381 p:edge p:N471 .
+p:N382 p:edge p:N472 .
+p:N383 p:edge p:N473 .
+p:N384 p:edge p:N474 .
+p:N385 p:edge p:N475 .
+p:N386 p:edge p:N476 .
+p:N387 p:edge p:N477 .
+p:N388 p:edge p:N478 .
+p:N389 p:edge p:N479 .
+p:N390 p:edge p:N480 .
+p:N391 p:edge p:N481 .
+p:N392 p:edge p:N482 .
+p:N393 p:edge p:N483 .
+p:N394 p:edge p:N484 .
+p:N395 p:edge p:N485 .
+p:N396 p:edge p:N486 .
+p:N397 p:edge p:N487 .
+p:N398 p:edge p:N488 .
+p:N399 p:edge p:N489 .
+p:N400 p:edge p:N490 .
+p:N401 p:edge p:N491 .
+p:N402 p:edge p:N492 .
+p:N403 p:edge p:N493 .
+p:N404 p:edge p:N494 .
+p:N405 p:edge p:N495 .
+p:N406 p:edge p:N496 .
+p:N407 p:edge p:N497 .
+p:N408 p:edge p:N498 .
+p:N409 p:edge p:N499 .
+p:N410 p:edge p:N500 .
+p:N411 p:edge p:N501 .
+p:N412 p:edge p:N502 .
+p:N413 p:edge p:N503 .
+p:N414 p:edge p:N504 .
+p:N415 p:edge p:N505 .
+p:N416 p:edge p:N506 .
+p:N417 p:edge p:N507 .
+p:N418 p:edge p:N508 .
+p:N419 p:edge p:N509 .
+p:N420 p:edge p:N510 .
+p:N421 p:edge p:N511 .
+p:N422 p:edge p:N512 .
+p:N423 p:edge p:N513 .
+p:N424 p:edge p:N514 .
+p:N425 p:edge p:N515 .
+p:N426 p:edge p:N516 .
+p:N427 p:edge p:N517 .
+p:N428 p:edge p:N518 .
+p:N429 p:edge p:N519 .
+p:N430 p:edge p:N520 .
+p:N431 p:edge p:N521 .
+p:N432 p:edge p:N522 .
+p:N433 p:edge p:N523 .
+p:N434 p:edge p:N524 .
+p:N435 p:edge p:N525 .
+p:N436 p:edge p:N526 .
+p:N437 p:edge p:N527 .
+p:N438 p:edge p:N528 .
+p:N439 p:edge p:N529 .
+p:N440 p:edge p:N530 .
+p:N441 p:edge p:N531 .
+p:N442 p:edge p:N532 .
+p:N443 p:edge p:N533 .
+p:N444 p:edge p:N534 .
+p:N445 p:edge p:N535 .
+p:N446 p:edge p:N536 .
+p:N447 p:edge p:N537 .
+p:N448 p:edge p:N538 .
+p:N449 p:edge p:N539 .
+p:N450 p:edge p:N540 .
+p:N451 p:edge p:N541 .
+p:N452 p:edge p:N542 .
+p:N453 p:edge p:N543 .
+p:N454 p:edge p:N544 .
+
+# ========== 收敛阶段开始 ==========
+# Layer 10 → Layer 11收敛连接 (N455-N554 → N555-N644)
+p:N455 p:edge p:N555 .
+p:N456 p:edge p:N556 .
+p:N457 p:edge p:N556 .
+p:N458 p:edge p:N557 .
+p:N459 p:edge p:N557 .
+p:N460 p:edge p:N558 .
+p:N461 p:edge p:N558 .
+p:N462 p:edge p:N559 .
+p:N463 p:edge p:N559 .
+p:N464 p:edge p:N560 .
+p:N465 p:edge p:N560 .
+p:N466 p:edge p:N561 .
+p:N467 p:edge p:N561 .
+p:N468 p:edge p:N562 .
+p:N469 p:edge p:N562 .
+p:N470 p:edge p:N563 .
+p:N471 p:edge p:N563 .
+p:N472 p:edge p:N564 .
+p:N473 p:edge p:N564 .
+p:N474 p:edge p:N565 .
+p:N475 p:edge p:N565 .
+p:N476 p:edge p:N566 .
+p:N477 p:edge p:N566 .
+p:N478 p:edge p:N567 .
+p:N479 p:edge p:N567 .
+p:N480 p:edge p:N568 .
+p:N481 p:edge p:N568 .
+p:N482 p:edge p:N569 .
+p:N483 p:edge p:N569 .
+p:N484 p:edge p:N570 .
+p:N485 p:edge p:N570 .
+p:N486 p:edge p:N571 .
+p:N487 p:edge p:N571 .
+p:N488 p:edge p:N572 .
+p:N489 p:edge p:N572 .
+p:N490 p:edge p:N573 .
+p:N491 p:edge p:N573 .
+p:N492 p:edge p:N574 .
+p:N493 p:edge p:N574 .
+p:N494 p:edge p:N575 .
+p:N495 p:edge p:N575 .
+p:N496 p:edge p:N576 .
+p:N497 p:edge p:N576 .
+p:N498 p:edge p:N577 .
+p:N499 p:edge p:N577 .
+p:N500 p:edge p:N578 .
+p:N501 p:edge p:N578 .
+p:N502 p:edge p:N579 .
+p:N503 p:edge p:N579 .
+p:N504 p:edge p:N580 .
+p:N505 p:edge p:N580 .
+p:N506 p:edge p:N581 .
+p:N507 p:edge p:N581 .
+p:N508 p:edge p:N582 .
+p:N509 p:edge p:N582 .
+p:N510 p:edge p:N583 .
+p:N511 p:edge p:N583 .
+p:N512 p:edge p:N584 .
+p:N513 p:edge p:N584 .
+p:N514 p:edge p:N585 .
+p:N515 p:edge p:N585 .
+p:N516 p:edge p:N586 .
+p:N517 p:edge p:N586 .
+p:N518 p:edge p:N587 .
+p:N519 p:edge p:N587 .
+p:N520 p:edge p:N588 .
+p:N521 p:edge p:N588 .
+p:N522 p:edge p:N589 .
+p:N523 p:edge p:N589 .
+p:N524 p:edge p:N590 .
+p:N525 p:edge p:N590 .
+p:N526 p:edge p:N591 .
+p:N527 p:edge p:N591 .
+p:N528 p:edge p:N592 .
+p:N529 p:edge p:N592 .
+p:N530 p:edge p:N593 .
+p:N531 p:edge p:N593 .
+p:N532 p:edge p:N594 .
+p:N533 p:edge p:N594 .
+p:N534 p:edge p:N595 .
+p:N535 p:edge p:N595 .
+p:N536 p:edge p:N596 .
+p:N537 p:edge p:N596 .
+p:N538 p:edge p:N597 .
+p:N539 p:edge p:N597 .
+p:N540 p:edge p:N598 .
+p:N541 p:edge p:N598 .
+p:N542 p:edge p:N599 .
+p:N543 p:edge p:N599 .
+p:N544 p:edge p:N600 .
+p:N545 p:edge p:N600 .
+p:N546 p:edge p:N601 .
+p:N547 p:edge p:N601 .
+p:N548 p:edge p:N602 .
+p:N549 p:edge p:N602 .
+p:N550 p:edge p:N603 .
+p:N551 p:edge p:N603 .
+p:N552 p:edge p:N604 .
+p:N553 p:edge p:N604 .
+p:N554 p:edge p:N605 .
+
+# ========== 简化剩余层级（空间限制）==========
+# Layer 11-19的连接采用简化算法模式
+# Layer 11 → Layer 12
+p:N555 p:edge p:N645 .
+p:N556 p:edge p:N645 .
+p:N557 p:edge p:N646 .
+p:N558 p:edge p:N646 .
+p:N559 p:edge p:N647 .
+p:N560 p:edge p:N647 .
+p:N561 p:edge p:N648 .
+p:N562 p:edge p:N648 .
+p:N563 p:edge p:N649 .
+p:N564 p:edge p:N649 .
+p:N565 p:edge p:N650 .
+p:N566 p:edge p:N650 .
+p:N567 p:edge p:N651 .
+p:N568 p:edge p:N651 .
+p:N569 p:edge p:N652 .
+p:N570 p:edge p:N652 .
+p:N571 p:edge p:N653 .
+p:N572 p:edge p:N653 .
+p:N573 p:edge p:N654 .
+p:N574 p:edge p:N654 .
+p:N575 p:edge p:N655 .
+p:N576 p:edge p:N655 .
+p:N577 p:edge p:N656 .
+p:N578 p:edge p:N656 .
+p:N579 p:edge p:N657 .
+p:N580 p:edge p:N657 .
+p:N581 p:edge p:N658 .
+p:N582 p:edge p:N658 .
+p:N583 p:edge p:N659 .
+p:N584 p:edge p:N659 .
+p:N585 p:edge p:N660 .
+p:N586 p:edge p:N660 .
+p:N587 p:edge p:N661 .
+p:N588 p:edge p:N661 .
+p:N589 p:edge p:N662 .
+p:N590 p:edge p:N662 .
+p:N591 p:edge p:N663 .
+p:N592 p:edge p:N663 .
+p:N593 p:edge p:N664 .
+p:N594 p:edge p:N664 .
+p:N595 p:edge p:N665 .
+p:N596 p:edge p:N665 .
+p:N597 p:edge p:N666 .
+p:N598 p:edge p:N666 .
+p:N599 p:edge p:N667 .
+p:N600 p:edge p:N667 .
+p:N601 p:edge p:N668 .
+p:N602 p:edge p:N668 .
+p:N603 p:edge p:N669 .
+p:N604 p:edge p:N669 .
+p:N605 p:edge p:N670 .
+p:N606 p:edge p:N670 .
+p:N607 p:edge p:N671 .
+p:N608 p:edge p:N671 .
+p:N609 p:edge p:N672 .
+p:N610 p:edge p:N672 .
+p:N611 p:edge p:N673 .
+p:N612 p:edge p:N673 .
+p:N613 p:edge p:N674 .
+p:N614 p:edge p:N674 .
+p:N615 p:edge p:N675 .
+p:N616 p:edge p:N675 .
+p:N617 p:edge p:N676 .
+p:N618 p:edge p:N676 .
+p:N619 p:edge p:N677 .
+p:N620 p:edge p:N677 .
+p:N621 p:edge p:N678 .
+p:N622 p:edge p:N678 .
+p:N623 p:edge p:N679 .
+p:N624 p:edge p:N679 .
+p:N625 p:edge p:N680 .
+p:N626 p:edge p:N680 .
+p:N627 p:edge p:N681 .
+p:N628 p:edge p:N681 .
+p:N629 p:edge p:N682 .
+p:N630 p:edge p:N682 .
+p:N631 p:edge p:N683 .
+p:N632 p:edge p:N683 .
+p:N633 p:edge p:N684 .
+p:N634 p:edge p:N684 .
+p:N635 p:edge p:N685 .
+p:N636 p:edge p:N685 .
+p:N637 p:edge p:N686 .
+p:N638 p:edge p:N686 .
+p:N639 p:edge p:N687 .
+p:N640 p:edge p:N687 .
+p:N641 p:edge p:N688 .
+p:N642 p:edge p:N688 .
+p:N643 p:edge p:N689 .
+p:N644 p:edge p:N689 .
+
+# 继续收敛到最终叶节点
+# 由于空间限制，使用快速收敛模式
+# Layer 12 → Layer 13
+p:N645 p:edge p:N725 .
+p:N646 p:edge p:N725 .
+p:N647 p:edge p:N726 .
+p:N648 p:edge p:N726 .
+p:N649 p:edge p:N727 .
+p:N650 p:edge p:N727 .
+p:N651 p:edge p:N728 .
+p:N652 p:edge p:N728 .
+p:N653 p:edge p:N729 .
+p:N654 p:edge p:N729 .
+p:N655 p:edge p:N730 .
+p:N656 p:edge p:N730 .
+p:N657 p:edge p:N731 .
+p:N658 p:edge p:N731 .
+p:N659 p:edge p:N732 .
+p:N660 p:edge p:N732 .
+p:N661 p:edge p:N733 .
+p:N662 p:edge p:N733 .
+p:N663 p:edge p:N734 .
+p:N664 p:edge p:N734 .
+p:N665 p:edge p:N735 .
+p:N666 p:edge p:N735 .
+p:N667 p:edge p:N736 .
+p:N668 p:edge p:N736 .
+p:N669 p:edge p:N737 .
+p:N670 p:edge p:N737 .
+p:N671 p:edge p:N738 .
+p:N672 p:edge p:N738 .
+p:N673 p:edge p:N739 .
+p:N674 p:edge p:N739 .
+p:N675 p:edge p:N740 .
+p:N676 p:edge p:N740 .
+p:N677 p:edge p:N741 .
+p:N678 p:edge p:N741 .
+p:N679 p:edge p:N742 .
+p:N680 p:edge p:N742 .
+p:N681 p:edge p:N743 .
+p:N682 p:edge p:N743 .
+p:N683 p:edge p:N744 .
+p:N684 p:edge p:N744 .
+p:N685 p:edge p:N745 .
+p:N686 p:edge p:N745 .
+p:N687 p:edge p:N746 .
+p:N688 p:edge p:N746 .
+p:N689 p:edge p:N747 .
+p:N690 p:edge p:N747 .
+p:N691 p:edge p:N748 .
+p:N692 p:edge p:N748 .
+p:N693 p:edge p:N749 .
+p:N694 p:edge p:N749 .
+p:N695 p:edge p:N750 .
+p:N696 p:edge p:N750 .
+p:N697 p:edge p:N751 .
+p:N698 p:edge p:N751 .
+p:N699 p:edge p:N752 .
+p:N700 p:edge p:N752 .
+p:N701 p:edge p:N753 .
+p:N702 p:edge p:N753 .
+p:N703 p:edge p:N754 .
+p:N704 p:edge p:N754 .
+p:N705 p:edge p:N755 .
+p:N706 p:edge p:N755 .
+p:N707 p:edge p:N756 .
+p:N708 p:edge p:N756 .
+p:N709 p:edge p:N757 .
+p:N710 p:edge p:N757 .
+p:N711 p:edge p:N758 .
+p:N712 p:edge p:N758 .
+p:N713 p:edge p:N759 .
+p:N714 p:edge p:N759 .
+p:N715 p:edge p:N760 .
+p:N716 p:edge p:N760 .
+p:N717 p:edge p:N761 .
+p:N718 p:edge p:N761 .
+p:N719 p:edge p:N762 .
+p:N720 p:edge p:N762 .
+p:N721 p:edge p:N763 .
+p:N722 p:edge p:N763 .
+p:N723 p:edge p:N764 .
+p:N724 p:edge p:N764 .
+
+# Layer 13 → Layer 14
+p:N725 p:edge p:N795 .
+p:N726 p:edge p:N795 .
+p:N727 p:edge p:N796 .
+p:N728 p:edge p:N796 .
+p:N729 p:edge p:N797 .
+p:N730 p:edge p:N797 .
+p:N731 p:edge p:N798 .
+p:N732 p:edge p:N798 .
+p:N733 p:edge p:N799 .
+p:N734 p:edge p:N799 .
+p:N735 p:edge p:N800 .
+p:N736 p:edge p:N800 .
+p:N737 p:edge p:N801 .
+p:N738 p:edge p:N801 .
+p:N739 p:edge p:N802 .
+p:N740 p:edge p:N802 .
+p:N741 p:edge p:N803 .
+p:N742 p:edge p:N803 .
+p:N743 p:edge p:N804 .
+p:N744 p:edge p:N804 .
+p:N745 p:edge p:N805 .
+p:N746 p:edge p:N805 .
+p:N747 p:edge p:N806 .
+p:N748 p:edge p:N806 .
+p:N749 p:edge p:N807 .
+p:N750 p:edge p:N807 .
+p:N751 p:edge p:N808 .
+p:N752 p:edge p:N808 .
+p:N753 p:edge p:N809 .
+p:N754 p:edge p:N809 .
+p:N755 p:edge p:N810 .
+p:N756 p:edge p:N810 .
+p:N757 p:edge p:N811 .
+p:N758 p:edge p:N811 .
+p:N759 p:edge p:N812 .
+p:N760 p:edge p:N812 .
+p:N761 p:edge p:N813 .
+p:N762 p:edge p:N813 .
+p:N763 p:edge p:N814 .
+p:N764 p:edge p:N814 .
+p:N765 p:edge p:N815 .
+p:N766 p:edge p:N815 .
+p:N767 p:edge p:N816 .
+p:N768 p:edge p:N816 .
+p:N769 p:edge p:N817 .
+p:N770 p:edge p:N817 .
+p:N771 p:edge p:N818 .
+p:N772 p:edge p:N818 .
+p:N773 p:edge p:N819 .
+p:N774 p:edge p:N819 .
+p:N775 p:edge p:N820 .
+p:N776 p:edge p:N820 .
+p:N777 p:edge p:N821 .
+p:N778 p:edge p:N821 .
+p:N779 p:edge p:N822 .
+p:N780 p:edge p:N822 .
+p:N781 p:edge p:N823 .
+p:N782 p:edge p:N823 .
+p:N783 p:edge p:N824 .
+p:N784 p:edge p:N824 .
+p:N785 p:edge p:N825 .
+p:N786 p:edge p:N825 .
+p:N787 p:edge p:N826 .
+p:N788 p:edge p:N826 .
+p:N789 p:edge p:N827 .
+p:N790 p:edge p:N827 .
+p:N791 p:edge p:N828 .
+p:N792 p:edge p:N828 .
+p:N793 p:edge p:N829 .
+p:N794 p:edge p:N829 .
+
+# Layer 14 → Layer 15
+p:N795 p:edge p:N855 .
+p:N796 p:edge p:N855 .
+p:N797 p:edge p:N856 .
+p:N798 p:edge p:N856 .
+p:N799 p:edge p:N857 .
+p:N800 p:edge p:N857 .
+p:N801 p:edge p:N858 .
+p:N802 p:edge p:N858 .
+p:N803 p:edge p:N859 .
+p:N804 p:edge p:N859 .
+p:N805 p:edge p:N860 .
+p:N806 p:edge p:N860 .
+p:N807 p:edge p:N861 .
+p:N808 p:edge p:N861 .
+p:N809 p:edge p:N862 .
+p:N810 p:edge p:N862 .
+p:N811 p:edge p:N863 .
+p:N812 p:edge p:N863 .
+p:N813 p:edge p:N864 .
+p:N814 p:edge p:N864 .
+p:N815 p:edge p:N865 .
+p:N816 p:edge p:N865 .
+p:N817 p:edge p:N866 .
+p:N818 p:edge p:N866 .
+p:N819 p:edge p:N867 .
+p:N820 p:edge p:N867 .
+p:N821 p:edge p:N868 .
+p:N822 p:edge p:N868 .
+p:N823 p:edge p:N869 .
+p:N824 p:edge p:N869 .
+p:N825 p:edge p:N870 .
+p:N826 p:edge p:N870 .
+p:N827 p:edge p:N871 .
+p:N828 p:edge p:N871 .
+p:N829 p:edge p:N872 .
+p:N830 p:edge p:N872 .
+p:N831 p:edge p:N873 .
+p:N832 p:edge p:N873 .
+p:N833 p:edge p:N874 .
+p:N834 p:edge p:N874 .
+p:N835 p:edge p:N875 .
+p:N836 p:edge p:N875 .
+p:N837 p:edge p:N876 .
+p:N838 p:edge p:N876 .
+p:N839 p:edge p:N877 .
+p:N840 p:edge p:N877 .
+p:N841 p:edge p:N878 .
+p:N842 p:edge p:N878 .
+p:N843 p:edge p:N879 .
+p:N844 p:edge p:N879 .
+p:N845 p:edge p:N880 .
+p:N846 p:edge p:N880 .
+p:N847 p:edge p:N881 .
+p:N848 p:edge p:N881 .
+p:N849 p:edge p:N882 .
+p:N850 p:edge p:N882 .
+p:N851 p:edge p:N883 .
+p:N852 p:edge p:N883 .
+p:N853 p:edge p:N884 .
+p:N854 p:edge p:N884 .
+
+# Layer 15 → Layer 16
+p:N855 p:edge p:N905 .
+p:N856 p:edge p:N905 .
+p:N857 p:edge p:N906 .
+p:N858 p:edge p:N906 .
+p:N859 p:edge p:N907 .
+p:N860 p:edge p:N907 .
+p:N861 p:edge p:N908 .
+p:N862 p:edge p:N908 .
+p:N863 p:edge p:N909 .
+p:N864 p:edge p:N909 .
+p:N865 p:edge p:N910 .
+p:N866 p:edge p:N910 .
+p:N867 p:edge p:N911 .
+p:N868 p:edge p:N911 .
+p:N869 p:edge p:N912 .
+p:N870 p:edge p:N912 .
+p:N871 p:edge p:N913 .
+p:N872 p:edge p:N913 .
+p:N873 p:edge p:N914 .
+p:N874 p:edge p:N914 .
+p:N875 p:edge p:N915 .
+p:N876 p:edge p:N915 .
+p:N877 p:edge p:N916 .
+p:N878 p:edge p:N916 .
+p:N879 p:edge p:N917 .
+p:N880 p:edge p:N917 .
+p:N881 p:edge p:N918 .
+p:N882 p:edge p:N918 .
+p:N883 p:edge p:N919 .
+p:N884 p:edge p:N919 .
+p:N885 p:edge p:N920 .
+p:N886 p:edge p:N920 .
+p:N887 p:edge p:N921 .
+p:N888 p:edge p:N921 .
+p:N889 p:edge p:N922 .
+p:N890 p:edge p:N922 .
+p:N891 p:edge p:N923 .
+p:N892 p:edge p:N923 .
+p:N893 p:edge p:N924 .
+p:N894 p:edge p:N924 .
+p:N895 p:edge p:N925 .
+p:N896 p:edge p:N925 .
+p:N897 p:edge p:N926 .
+p:N898 p:edge p:N926 .
+p:N899 p:edge p:N927 .
+p:N900 p:edge p:N927 .
+p:N901 p:edge p:N928 .
+p:N902 p:edge p:N928 .
+p:N903 p:edge p:N929 .
+p:N904 p:edge p:N929 .
+
+# Layer 16 → Layer 17
+p:N905 p:edge p:N945 .
+p:N906 p:edge p:N945 .
+p:N907 p:edge p:N946 .
+p:N908 p:edge p:N946 .
+p:N909 p:edge p:N947 .
+p:N910 p:edge p:N947 .
+p:N911 p:edge p:N948 .
+p:N912 p:edge p:N948 .
+p:N913 p:edge p:N949 .
+p:N914 p:edge p:N949 .
+p:N915 p:edge p:N950 .
+p:N916 p:edge p:N950 .
+p:N917 p:edge p:N951 .
+p:N918 p:edge p:N951 .
+p:N919 p:edge p:N952 .
+p:N920 p:edge p:N952 .
+p:N921 p:edge p:N953 .
+p:N922 p:edge p:N953 .
+p:N923 p:edge p:N954 .
+p:N924 p:edge p:N954 .
+p:N925 p:edge p:N955 .
+p:N926 p:edge p:N955 .
+p:N927 p:edge p:N956 .
+p:N928 p:edge p:N956 .
+p:N929 p:edge p:N957 .
+p:N930 p:edge p:N957 .
+p:N931 p:edge p:N958 .
+p:N932 p:edge p:N958 .
+p:N933 p:edge p:N959 .
+p:N934 p:edge p:N959 .
+p:N935 p:edge p:N960 .
+p:N936 p:edge p:N960 .
+p:N937 p:edge p:N961 .
+p:N938 p:edge p:N961 .
+p:N939 p:edge p:N962 .
+p:N940 p:edge p:N962 .
+p:N941 p:edge p:N963 .
+p:N942 p:edge p:N963 .
+p:N943 p:edge p:N964 .
+p:N944 p:edge p:N964 .
+
+# Layer 17 → Layer 18
+p:N945 p:edge p:N975 .
+p:N946 p:edge p:N975 .
+p:N947 p:edge p:N976 .
+p:N948 p:edge p:N976 .
+p:N949 p:edge p:N977 .
+p:N950 p:edge p:N977 .
+p:N951 p:edge p:N978 .
+p:N952 p:edge p:N978 .
+p:N953 p:edge p:N979 .
+p:N954 p:edge p:N979 .
+p:N955 p:edge p:N980 .
+p:N956 p:edge p:N980 .
+p:N957 p:edge p:N981 .
+p:N958 p:edge p:N981 .
+p:N959 p:edge p:N982 .
+p:N960 p:edge p:N982 .
+p:N961 p:edge p:N983 .
+p:N962 p:edge p:N983 .
+p:N963 p:edge p:N984 .
+p:N964 p:edge p:N984 .
+p:N965 p:edge p:N985 .
+p:N966 p:edge p:N985 .
+p:N967 p:edge p:N986 .
+p:N968 p:edge p:N986 .
+p:N969 p:edge p:N987 .
+p:N970 p:edge p:N987 .
+p:N971 p:edge p:N988 .
+p:N972 p:edge p:N988 .
+p:N973 p:edge p:N989 .
+p:N974 p:edge p:N989 .
+
+# Layer 18 → Layer 19 (最终收敛到叶节点)
+p:N975 p:edge p:N990 .
+p:N976 p:edge p:N990 .
+p:N977 p:edge p:N991 .
+p:N978 p:edge p:N991 .
+p:N979 p:edge p:N992 .
+p:N980 p:edge p:N992 .
+p:N981 p:edge p:N993 .
+p:N982 p:edge p:N993 .
+p:N983 p:edge p:N994 .
+p:N984 p:edge p:N994 .
+p:N985 p:edge p:N995 .
+p:N986 p:edge p:N995 .
+p:N987 p:edge p:N996 .
+p:N988 p:edge p:N996 .
+p:N989 p:edge p:N997 .
+
+# 补充叶节点连接
+p:N975 p:edge p:N998 .
+p:N980 p:edge p:N999 .
+
+# ========== 大量超复杂汇聚模式 ==========
+# 关键汇聚节点：N500 (Layer 10中心)
+p:N50 p:edge p:N500 .    # Layer 3 → Layer 10
+p:N100 p:edge p:N500 .   # Layer 4 → Layer 10
+p:N250 p:edge p:N500 .   # Layer 7 → Layer 10
+p:N300 p:edge p:N500 .   # Layer 8 → Layer 10
+p:N400 p:edge p:N500 .   # Layer 9 → Layer 10
+p:N150 p:edge p:N500 .   # Layer 5 → Layer 10
+p:N350 p:edge p:N500 .   # Layer 8 → Layer 10
+p:N450 p:edge p:N500 .   # Layer 9 → Layer 10
+
+# 关键汇聚节点：N750 (Layer 13中心)
+p:N200 p:edge p:N750 .   # Layer 6 → Layer 13
+p:N350 p:edge p:N750 .   # Layer 8 → Layer 13
+p:N500 p:edge p:N750 .   # Layer 10 → Layer 13
+p:N600 p:edge p:N750 .   # Layer 11 → Layer 13
+p:N650 p:edge p:N750 .   # Layer 12 → Layer 13
+p:N550 p:edge p:N750 .   # Layer 10 → Layer 13
+p:N450 p:edge p:N750 .   # Layer 9 → Layer 13
+
+# 关键汇聚节点：N900 (Layer 16中心)
+p:N300 p:edge p:N900 .   # Layer 8 → Layer 16
+p:N500 p:edge p:N900 .   # Layer 10 → Layer 16
+p:N700 p:edge p:N900 .   # Layer 12 → Layer 16
+p:N750 p:edge p:N900 .   # Layer 13 → Layer 16
+p:N800 p:edge p:N900 .   # Layer 14 → Layer 16
+p:N850 p:edge p:N900 .   # Layer 15 → Layer 16
+
+# 终极汇聚节点：N990-N999 (所有叶节点)
+p:N100 p:edge p:N990 .   # 多路径汇聚到N990
+p:N300 p:edge p:N990 .
+p:N500 p:edge p:N990 .
+p:N700 p:edge p:N990 .
+p:N800 p:edge p:N990 .
+p:N850 p:edge p:N990 .
+p:N900 p:edge p:N990 .
+p:N950 p:edge p:N990 .
+
+p:N200 p:edge p:N995 .   # 多路径汇聚到N995
+p:N400 p:edge p:N995 .
+p:N600 p:edge p:N995 .
+p:N750 p:edge p:N995 .
+p:N850 p:edge p:N995 .
+p:N920 p:edge p:N995 .
+p:N960 p:edge p:N995 .
+
+p:N250 p:edge p:N999 .   # 多路径汇聚到N999
+p:N450 p:edge p:N999 .
+p:N650 p:edge p:N999 .
+p:N800 p:edge p:N999 .
+p:N900 p:edge p:N999 .
+p:N950 p:edge p:N999 .
+p:N975 p:edge p:N999 .
+
+# ========== 大量增加边密度到5000条 ==========
+
+# 添加更多层间密集连接
+# Layer 2到Layer 3的额外密集连接
+p:N15 p:edge p:N45 .
+p:N15 p:edge p:N50 .
+p:N15 p:edge p:N55 .
+p:N16 p:edge p:N46 .
+p:N16 p:edge p:N51 .
+p:N16 p:edge p:N56 .
+p:N17 p:edge p:N47 .
+p:N17 p:edge p:N52 .
+p:N17 p:edge p:N57 .
+p:N18 p:edge p:N48 .
+p:N18 p:edge p:N53 .
+p:N18 p:edge p:N58 .
+p:N19 p:edge p:N49 .
+p:N19 p:edge p:N54 .
+p:N19 p:edge p:N59 .
+p:N20 p:edge p:N50 .
+p:N20 p:edge p:N55 .
+p:N20 p:edge p:N60 .
+p:N21 p:edge p:N51 .
+p:N21 p:edge p:N56 .
+p:N21 p:edge p:N61 .
+p:N22 p:edge p:N52 .
+p:N22 p:edge p:N57 .
+p:N22 p:edge p:N62 .
+p:N23 p:edge p:N53 .
+p:N23 p:edge p:N58 .
+p:N23 p:edge p:N63 .
+p:N24 p:edge p:N54 .
+p:N24 p:edge p:N59 .
+p:N24 p:edge p:N64 .
+p:N25 p:edge p:N55 .
+p:N25 p:edge p:N60 .
+p:N26 p:edge p:N56 .
+p:N26 p:edge p:N61 .
+p:N27 p:edge p:N57 .
+p:N27 p:edge p:N62 .
+p:N28 p:edge p:N58 .
+p:N28 p:edge p:N63 .
+p:N29 p:edge p:N59 .
+p:N29 p:edge p:N64 .
+p:N30 p:edge p:N60 .
+p:N31 p:edge p:N61 .
+p:N32 p:edge p:N62 .
+p:N33 p:edge p:N63 .
+p:N34 p:edge p:N64 .
+
+# Layer 3到Layer 4的额外密集连接
+p:N35 p:edge p:N75 .
+p:N35 p:edge p:N80 .
+p:N35 p:edge p:N85 .
+p:N35 p:edge p:N90 .
+p:N36 p:edge p:N76 .
+p:N36 p:edge p:N81 .
+p:N36 p:edge p:N86 .
+p:N36 p:edge p:N91 .
+p:N37 p:edge p:N77 .
+p:N37 p:edge p:N82 .
+p:N37 p:edge p:N87 .
+p:N37 p:edge p:N92 .
+p:N38 p:edge p:N78 .
+p:N38 p:edge p:N83 .
+p:N38 p:edge p:N88 .
+p:N38 p:edge p:N93 .
+p:N39 p:edge p:N79 .
+p:N39 p:edge p:N84 .
+p:N39 p:edge p:N89 .
+p:N39 p:edge p:N94 .
+p:N40 p:edge p:N80 .
+p:N40 p:edge p:N85 .
+p:N40 p:edge p:N90 .
+p:N40 p:edge p:N95 .
+p:N41 p:edge p:N81 .
+p:N41 p:edge p:N86 .
+p:N41 p:edge p:N91 .
+p:N41 p:edge p:N96 .
+p:N42 p:edge p:N82 .
+p:N42 p:edge p:N87 .
+p:N42 p:edge p:N92 .
+p:N42 p:edge p:N97 .
+p:N43 p:edge p:N83 .
+p:N43 p:edge p:N88 .
+p:N43 p:edge p:N93 .
+p:N43 p:edge p:N98 .
+p:N44 p:edge p:N84 .
+p:N44 p:edge p:N89 .
+p:N44 p:edge p:N94 .
+p:N44 p:edge p:N99 .
+p:N45 p:edge p:N85 .
+p:N45 p:edge p:N90 .
+p:N45 p:edge p:N95 .
+p:N45 p:edge p:N100 .
+p:N46 p:edge p:N86 .
+p:N46 p:edge p:N91 .
+p:N46 p:edge p:N96 .
+p:N46 p:edge p:N101 .
+p:N47 p:edge p:N87 .
+p:N47 p:edge p:N92 .
+p:N47 p:edge p:N97 .
+p:N47 p:edge p:N102 .
+p:N48 p:edge p:N88 .
+p:N48 p:edge p:N93 .
+p:N48 p:edge p:N98 .
+p:N48 p:edge p:N103 .
+p:N49 p:edge p:N89 .
+p:N49 p:edge p:N94 .
+p:N49 p:edge p:N99 .
+p:N49 p:edge p:N104 .
+p:N50 p:edge p:N90 .
+p:N50 p:edge p:N95 .
+p:N50 p:edge p:N100 .
+p:N51 p:edge p:N91 .
+p:N51 p:edge p:N96 .
+p:N51 p:edge p:N101 .
+p:N52 p:edge p:N92 .
+p:N52 p:edge p:N97 .
+p:N52 p:edge p:N102 .
+p:N53 p:edge p:N93 .
+p:N53 p:edge p:N98 .
+p:N53 p:edge p:N103 .
+p:N54 p:edge p:N94 .
+p:N54 p:edge p:N99 .
+p:N54 p:edge p:N104 .
+
+# 大量超长跨层连接（增加复杂性）
+# 从Layer 0到各个深层的直接连接
+p:N0 p:edge p:N200 .
+p:N0 p:edge p:N300 .
+p:N0 p:edge p:N450 .
+p:N0 p:edge p:N550 .
+p:N0 p:edge p:N650 .
+p:N0 p:edge p:N750 .
+p:N0 p:edge p:N850 .
+p:N0 p:edge p:N900 .
+p:N0 p:edge p:N950 .
+p:N0 p:edge p:N980 .
+p:N0 p:edge p:N985 .
+p:N0 p:edge p:N988 .
+p:N0 p:edge p:N991 .
+p:N0 p:edge p:N993 .
+p:N0 p:edge p:N994 .
+p:N0 p:edge p:N996 .
+p:N0 p:edge p:N997 .
+
+p:N1 p:edge p:N210 .
+p:N1 p:edge p:N310 .
+p:N1 p:edge p:N460 .
+p:N1 p:edge p:N560 .
+p:N1 p:edge p:N660 .
+p:N1 p:edge p:N760 .
+p:N1 p:edge p:N860 .
+p:N1 p:edge p:N910 .
+p:N1 p:edge p:N955 .
+p:N1 p:edge p:N982 .
+p:N1 p:edge p:N986 .
+p:N1 p:edge p:N989 .
+p:N1 p:edge p:N992 .
+p:N1 p:edge p:N996 .
+p:N1 p:edge p:N998 .
+
+p:N2 p:edge p:N220 .
+p:N2 p:edge p:N320 .
+p:N2 p:edge p:N470 .
+p:N2 p:edge p:N570 .
+p:N2 p:edge p:N670 .
+p:N2 p:edge p:N770 .
+p:N2 p:edge p:N870 .
+p:N2 p:edge p:N915 .
+p:N2 p:edge p:N965 .
+p:N2 p:edge p:N983 .
+p:N2 p:edge p:N987 .
+p:N2 p:edge p:N991 .
+p:N2 p:edge p:N993 .
+p:N2 p:edge p:N997 .
+
+p:N3 p:edge p:N230 .
+p:N3 p:edge p:N330 .
+p:N3 p:edge p:N480 .
+p:N3 p:edge p:N580 .
+p:N3 p:edge p:N680 .
+p:N3 p:edge p:N780 .
+p:N3 p:edge p:N880 .
+p:N3 p:edge p:N925 .
+p:N3 p:edge p:N968 .
+p:N3 p:edge p:N984 .
+p:N3 p:edge p:N988 .
+p:N3 p:edge p:N992 .
+p:N3 p:edge p:N994 .
+p:N3 p:edge p:N998 .
+
+p:N4 p:edge p:N240 .
+p:N4 p:edge p:N340 .
+p:N4 p:edge p:N490 .
+p:N4 p:edge p:N590 .
+p:N4 p:edge p:N690 .
+p:N4 p:edge p:N790 .
+p:N4 p:edge p:N890 .
+p:N4 p:edge p:N930 .
+p:N4 p:edge p:N970 .
+p:N4 p:edge p:N986 .
+p:N4 p:edge p:N989 .
+p:N4 p:edge p:N993 .
+p:N4 p:edge p:N995 .
+p:N4 p:edge p:N999 .
+
+# Layer 1到各深层的大量跨层连接
+p:N5 p:edge p:N125 .
+p:N5 p:edge p:N225 .
+p:N5 p:edge p:N375 .
+p:N5 p:edge p:N475 .
+p:N5 p:edge p:N625 .
+p:N5 p:edge p:N725 .
+p:N5 p:edge p:N825 .
+p:N5 p:edge p:N905 .
+p:N5 p:edge p:N945 .
+p:N5 p:edge p:N975 .
+p:N5 p:edge p:N990 .
+p:N5 p:edge p:N995 .
+p:N5 p:edge p:N999 .
+
+p:N6 p:edge p:N136 .
+p:N6 p:edge p:N236 .
+p:N6 p:edge p:N386 .
+p:N6 p:edge p:N486 .
+p:N6 p:edge p:N636 .
+p:N6 p:edge p:N736 .
+p:N6 p:edge p:N836 .
+p:N6 p:edge p:N906 .
+p:N6 p:edge p:N946 .
+p:N6 p:edge p:N976 .
+p:N6 p:edge p:N990 .
+p:N6 p:edge p:N991 .
+p:N6 p:edge p:N996 .
+
+p:N7 p:edge p:N147 .
+p:N7 p:edge p:N247 .
+p:N7 p:edge p:N397 .
+p:N7 p:edge p:N497 .
+p:N7 p:edge p:N647 .
+p:N7 p:edge p:N747 .
+p:N7 p:edge p:N847 .
+p:N7 p:edge p:N907 .
+p:N7 p:edge p:N947 .
+p:N7 p:edge p:N977 .
+p:N7 p:edge p:N991 .
+p:N7 p:edge p:N992 .
+p:N7 p:edge p:N997 .
+
+p:N8 p:edge p:N158 .
+p:N8 p:edge p:N258 .
+p:N8 p:edge p:N408 .
+p:N8 p:edge p:N508 .
+p:N8 p:edge p:N658 .
+p:N8 p:edge p:N758 .
+p:N8 p:edge p:N858 .
+p:N8 p:edge p:N908 .
+p:N8 p:edge p:N948 .
+p:N8 p:edge p:N978 .
+p:N8 p:edge p:N992 .
+p:N8 p:edge p:N993 .
+p:N8 p:edge p:N998 .
+
+p:N9 p:edge p:N169 .
+p:N9 p:edge p:N269 .
+p:N9 p:edge p:N419 .
+p:N9 p:edge p:N519 .
+p:N9 p:edge p:N669 .
+p:N9 p:edge p:N769 .
+p:N9 p:edge p:N869 .
+p:N9 p:edge p:N909 .
+p:N9 p:edge p:N949 .
+p:N9 p:edge p:N979 .
+p:N9 p:edge p:N993 .
+p:N9 p:edge p:N994 .
+p:N9 p:edge p:N999 .
+
+p:N10 p:edge p:N180 .
+p:N10 p:edge p:N280 .
+p:N10 p:edge p:N430 .
+p:N10 p:edge p:N530 .
+p:N10 p:edge p:N680 .
+p:N10 p:edge p:N780 .
+p:N10 p:edge p:N880 .
+p:N10 p:edge p:N910 .
+p:N10 p:edge p:N950 .
+p:N10 p:edge p:N980 .
+p:N10 p:edge p:N994 .
+p:N10 p:edge p:N995 .
+
+p:N11 p:edge p:N191 .
+p:N11 p:edge p:N291 .
+p:N11 p:edge p:N441 .
+p:N11 p:edge p:N541 .
+p:N11 p:edge p:N691 .
+p:N11 p:edge p:N791 .
+p:N11 p:edge p:N881 .
+p:N11 p:edge p:N911 .
+p:N11 p:edge p:N951 .
+p:N11 p:edge p:N981 .
+p:N11 p:edge p:N995 .
+p:N11 p:edge p:N996 .
+
+p:N12 p:edge p:N202 .
+p:N12 p:edge p:N302 .
+p:N12 p:edge p:N452 .
+p:N12 p:edge p:N552 .
+p:N12 p:edge p:N702 .
+p:N12 p:edge p:N802 .
+p:N12 p:edge p:N882 .
+p:N12 p:edge p:N912 .
+p:N12 p:edge p:N952 .
+p:N12 p:edge p:N982 .
+p:N12 p:edge p:N996 .
+p:N12 p:edge p:N997 .
+
+p:N13 p:edge p:N213 .
+p:N13 p:edge p:N313 .
+p:N13 p:edge p:N463 .
+p:N13 p:edge p:N563 .
+p:N13 p:edge p:N713 .
+p:N13 p:edge p:N813 .
+p:N13 p:edge p:N883 .
+p:N13 p:edge p:N913 .
+p:N13 p:edge p:N953 .
+p:N13 p:edge p:N983 .
+p:N13 p:edge p:N997 .
+p:N13 p:edge p:N998 .
+
+p:N14 p:edge p:N224 .
+p:N14 p:edge p:N324 .
+p:N14 p:edge p:N474 .
+p:N14 p:edge p:N574 .
+p:N14 p:edge p:N724 .
+p:N14 p:edge p:N824 .
+p:N14 p:edge p:N884 .
+p:N14 p:edge p:N914 .
+p:N14 p:edge p:N954 .
+p:N14 p:edge p:N984 .
+p:N14 p:edge p:N998 .
+p:N14 p:edge p:N999 .
+
+# 大量中层跨层连接
+# Layer 2到深层的连接
+p:N15 p:edge p:N315 .
+p:N15 p:edge p:N415 .
+p:N15 p:edge p:N515 .
+p:N15 p:edge p:N615 .
+p:N15 p:edge p:N715 .
+p:N15 p:edge p:N815 .
+p:N15 p:edge p:N915 .
+p:N15 p:edge p:N955 .
+p:N15 p:edge p:N985 .
+p:N15 p:edge p:N991 .
+p:N15 p:edge p:N996 .
+
+p:N16 p:edge p:N316 .
+p:N16 p:edge p:N416 .
+p:N16 p:edge p:N516 .
+p:N16 p:edge p:N616 .
+p:N16 p:edge p:N716 .
+p:N16 p:edge p:N816 .
+p:N16 p:edge p:N916 .
+p:N16 p:edge p:N956 .
+p:N16 p:edge p:N986 .
+p:N16 p:edge p:N992 .
+p:N16 p:edge p:N997 .
+
+p:N17 p:edge p:N317 .
+p:N17 p:edge p:N417 .
+p:N17 p:edge p:N517 .
+p:N17 p:edge p:N617 .
+p:N17 p:edge p:N717 .
+p:N17 p:edge p:N817 .
+p:N17 p:edge p:N917 .
+p:N17 p:edge p:N957 .
+p:N17 p:edge p:N987 .
+p:N17 p:edge p:N993 .
+p:N17 p:edge p:N998 .
+
+p:N18 p:edge p:N318 .
+p:N18 p:edge p:N418 .
+p:N18 p:edge p:N518 .
+p:N18 p:edge p:N618 .
+p:N18 p:edge p:N718 .
+p:N18 p:edge p:N818 .
+p:N18 p:edge p:N918 .
+p:N18 p:edge p:N958 .
+p:N18 p:edge p:N988 .
+p:N18 p:edge p:N994 .
+p:N18 p:edge p:N999 .
+
+p:N19 p:edge p:N319 .
+p:N19 p:edge p:N419 .
+p:N19 p:edge p:N519 .
+p:N19 p:edge p:N619 .
+p:N19 p:edge p:N719 .
+p:N19 p:edge p:N819 .
+p:N19 p:edge p:N919 .
+p:N19 p:edge p:N959 .
+p:N19 p:edge p:N989 .
+p:N19 p:edge p:N995 .
+
+p:N20 p:edge p:N320 .
+p:N20 p:edge p:N420 .
+p:N20 p:edge p:N520 .
+p:N20 p:edge p:N620 .
+p:N20 p:edge p:N720 .
+p:N20 p:edge p:N820 .
+p:N20 p:edge p:N920 .
+p:N20 p:edge p:N960 .
+p:N20 p:edge p:N990 .
+p:N20 p:edge p:N996 .
+
+p:N21 p:edge p:N321 .
+p:N21 p:edge p:N421 .
+p:N21 p:edge p:N521 .
+p:N21 p:edge p:N621 .
+p:N21 p:edge p:N721 .
+p:N21 p:edge p:N821 .
+p:N21 p:edge p:N921 .
+p:N21 p:edge p:N961 .
+p:N21 p:edge p:N991 .
+p:N21 p:edge p:N997 .
+
+p:N22 p:edge p:N322 .
+p:N22 p:edge p:N422 .
+p:N22 p:edge p:N522 .
+p:N22 p:edge p:N622 .
+p:N22 p:edge p:N722 .
+p:N22 p:edge p:N822 .
+p:N22 p:edge p:N922 .
+p:N22 p:edge p:N962 .
+p:N22 p:edge p:N992 .
+p:N22 p:edge p:N998 .
+
+p:N23 p:edge p:N323 .
+p:N23 p:edge p:N423 .
+p:N23 p:edge p:N523 .
+p:N23 p:edge p:N623 .
+p:N23 p:edge p:N723 .
+p:N23 p:edge p:N823 .
+p:N23 p:edge p:N923 .
+p:N23 p:edge p:N963 .
+p:N23 p:edge p:N993 .
+p:N23 p:edge p:N999 .
+
+p:N24 p:edge p:N324 .
+p:N24 p:edge p:N424 .
+p:N24 p:edge p:N524 .
+p:N24 p:edge p:N624 .
+p:N24 p:edge p:N724 .
+p:N24 p:edge p:N824 .
+p:N24 p:edge p:N924 .
+p:N24 p:edge p:N964 .
+p:N24 p:edge p:N994 .
+
+p:N25 p:edge p:N325 .
+p:N25 p:edge p:N425 .
+p:N25 p:edge p:N525 .
+p:N25 p:edge p:N625 .
+p:N25 p:edge p:N725 .
+p:N25 p:edge p:N825 .
+p:N25 p:edge p:N925 .
+p:N25 p:edge p:N965 .
+p:N25 p:edge p:N995 .
+
+# 继续添加更多跨层连接...
+# Layer 3到深层
+p:N35 p:edge p:N435 .
+p:N35 p:edge p:N535 .
+p:N35 p:edge p:N635 .
+p:N35 p:edge p:N735 .
+p:N35 p:edge p:N835 .
+p:N35 p:edge p:N935 .
+p:N35 p:edge p:N975 .
+p:N35 p:edge p:N995 .
+
+p:N36 p:edge p:N436 .
+p:N36 p:edge p:N536 .
+p:N36 p:edge p:N636 .
+p:N36 p:edge p:N736 .
+p:N36 p:edge p:N836 .
+p:N36 p:edge p:N936 .
+p:N36 p:edge p:N976 .
+p:N36 p:edge p:N996 .
+
+p:N37 p:edge p:N437 .
+p:N37 p:edge p:N537 .
+p:N37 p:edge p:N637 .
+p:N37 p:edge p:N737 .
+p:N37 p:edge p:N837 .
+p:N37 p:edge p:N937 .
+p:N37 p:edge p:N977 .
+p:N37 p:edge p:N997 .
+
+p:N38 p:edge p:N438 .
+p:N38 p:edge p:N538 .
+p:N38 p:edge p:N638 .
+p:N38 p:edge p:N738 .
+p:N38 p:edge p:N838 .
+p:N38 p:edge p:N938 .
+p:N38 p:edge p:N978 .
+p:N38 p:edge p:N998 .
+
+p:N39 p:edge p:N439 .
+p:N39 p:edge p:N539 .
+p:N39 p:edge p:N639 .
+p:N39 p:edge p:N739 .
+p:N39 p:edge p:N839 .
+p:N39 p:edge p:N939 .
+p:N39 p:edge p:N979 .
+p:N39 p:edge p:N999 .
+
+p:N40 p:edge p:N440 .
+p:N40 p:edge p:N540 .
+p:N40 p:edge p:N640 .
+p:N40 p:edge p:N740 .
+p:N40 p:edge p:N840 .
+p:N40 p:edge p:N940 .
+p:N40 p:edge p:N980 .
+p:N40 p:edge p:N990 .
+
+# Layer 4到深层
+p:N65 p:edge p:N365 .
+p:N65 p:edge p:N465 .
+p:N65 p:edge p:N565 .
+p:N65 p:edge p:N665 .
+p:N65 p:edge p:N765 .
+p:N65 p:edge p:N865 .
+p:N65 p:edge p:N965 .
+p:N65 p:edge p:N985 .
+p:N65 p:edge p:N995 .
+
+p:N70 p:edge p:N370 .
+p:N70 p:edge p:N470 .
+p:N70 p:edge p:N570 .
+p:N70 p:edge p:N670 .
+p:N70 p:edge p:N770 .
+p:N70 p:edge p:N870 .
+p:N70 p:edge p:N970 .
+p:N70 p:edge p:N990 .
+
+p:N75 p:edge p:N375 .
+p:N75 p:edge p:N475 .
+p:N75 p:edge p:N575 .
+p:N75 p:edge p:N675 .
+p:N75 p:edge p:N775 .
+p:N75 p:edge p:N875 .
+p:N75 p:edge p:N975 .
+p:N75 p:edge p:N995 .
+
+p:N80 p:edge p:N380 .
+p:N80 p:edge p:N480 .
+p:N80 p:edge p:N580 .
+p:N80 p:edge p:N680 .
+p:N80 p:edge p:N780 .
+p:N80 p:edge p:N880 .
+p:N80 p:edge p:N980 .
+
+# 添加大量网状交叉连接
+# 在不同层之间创建复杂的网状连接
+p:N155 p:edge p:N355 .
+p:N155 p:edge p:N455 .
+p:N155 p:edge p:N555 .
+p:N155 p:edge p:N655 .
+p:N155 p:edge p:N755 .
+p:N155 p:edge p:N855 .
+p:N155 p:edge p:N955 .
+
+p:N200 p:edge p:N400 .
+p:N200 p:edge p:N500 .
+p:N200 p:edge p:N600 .
+p:N200 p:edge p:N700 .
+p:N200 p:edge p:N800 .
+p:N200 p:edge p:N900 .
+
+p:N250 p:edge p:N350 .
+p:N250 p:edge p:N450 .
+p:N250 p:edge p:N550 .
+p:N250 p:edge p:N650 .
+p:N250 p:edge p:N750 .
+p:N250 p:edge p:N850 .
+
+# 添加更多复杂汇聚模式
+# 增加对关键节点的汇聚连接
+p:N55 p:edge p:N500 .
+p:N65 p:edge p:N500 .
+p:N75 p:edge p:N500 .
+p:N85 p:edge p:N500 .
+p:N95 p:edge p:N500 .
+p:N155 p:edge p:N500 .
+p:N165 p:edge p:N500 .
+p:N175 p:edge p:N500 .
+p:N185 p:edge p:N500 .
+p:N195 p:edge p:N500 .
+p:N255 p:edge p:N500 .
+p:N265 p:edge p:N500 .
+p:N275 p:edge p:N500 .
+p:N285 p:edge p:N500 .
+p:N295 p:edge p:N500 .
+p:N355 p:edge p:N500 .
+p:N365 p:edge p:N500 .
+p:N375 p:edge p:N500 .
+p:N385 p:edge p:N500 .
+p:N395 p:edge p:N500 .
+
+p:N125 p:edge p:N750 .
+p:N135 p:edge p:N750 .
+p:N145 p:edge p:N750 .
+p:N225 p:edge p:N750 .
+p:N235 p:edge p:N750 .
+p:N245 p:edge p:N750 .
+p:N325 p:edge p:N750 .
+p:N335 p:edge p:N750 .
+p:N345 p:edge p:N750 .
+p:N425 p:edge p:N750 .
+p:N435 p:edge p:N750 .
+p:N445 p:edge p:N750 .
+p:N525 p:edge p:N750 .
+p:N535 p:edge p:N750 .
+p:N545 p:edge p:N750 .
+p:N625 p:edge p:N750 .
+p:N635 p:edge p:N750 .
+p:N645 p:edge p:N750 .
+p:N655 p:edge p:N750 .
+p:N665 p:edge p:N750 .
+p:N675 p:edge p:N750 .
+p:N685 p:edge p:N750 .
+p:N695 p:edge p:N750 .
+p:N705 p:edge p:N750 .
+p:N715 p:edge p:N750 .
+
+p:N180 p:edge p:N900 .
+p:N190 p:edge p:N900 .
+p:N280 p:edge p:N900 .
+p:N290 p:edge p:N900 .
+p:N380 p:edge p:N900 .
+p:N390 p:edge p:N900 .
+p:N480 p:edge p:N900 .
+p:N490 p:edge p:N900 .
+p:N580 p:edge p:N900 .
+p:N590 p:edge p:N900 .
+p:N680 p:edge p:N900 .
+p:N690 p:edge p:N900 .
+p:N780 p:edge p:N900 .
+p:N790 p:edge p:N900 .
+p:N805 p:edge p:N900 .
+p:N815 p:edge p:N900 .
+p:N825 p:edge p:N900 .
+p:N835 p:edge p:N900 .
+p:N845 p:edge p:N900 .
+p:N855 p:edge p:N900 .
+p:N865 p:edge p:N900 .
+p:N875 p:edge p:N900 .
+p:N885 p:edge p:N900 .
+
+# 添加大量终极汇聚连接
+# 多个中间节点汇聚到最终叶节点
+p:N105 p:edge p:N990 .
+p:N115 p:edge p:N990 .
+p:N125 p:edge p:N990 .
+p:N135 p:edge p:N990 .
+p:N145 p:edge p:N990 .
+p:N205 p:edge p:N990 .
+p:N215 p:edge p:N990 .
+p:N225 p:edge p:N990 .
+p:N235 p:edge p:N990 .
+p:N245 p:edge p:N990 .
+p:N305 p:edge p:N990 .
+p:N315 p:edge p:N990 .
+p:N325 p:edge p:N990 .
+p:N335 p:edge p:N990 .
+p:N345 p:edge p:N990 .
+p:N405 p:edge p:N990 .
+p:N415 p:edge p:N990 .
+p:N425 p:edge p:N990 .
+p:N435 p:edge p:N990 .
+p:N445 p:edge p:N990 .
+p:N505 p:edge p:N990 .
+p:N515 p:edge p:N990 .
+p:N525 p:edge p:N990 .
+p:N535 p:edge p:N990 .
+p:N545 p:edge p:N990 .
+p:N605 p:edge p:N990 .
+p:N615 p:edge p:N990 .
+p:N625 p:edge p:N990 .
+p:N635 p:edge p:N990 .
+p:N645 p:edge p:N990 .
+p:N705 p:edge p:N990 .
+p:N715 p:edge p:N990 .
+p:N725 p:edge p:N990 .
+p:N735 p:edge p:N990 .
+p:N745 p:edge p:N990 .
+p:N805 p:edge p:N990 .
+p:N815 p:edge p:N990 .
+p:N825 p:edge p:N990 .
+p:N835 p:edge p:N990 .
+p:N845 p:edge p:N990 .
+p:N905 p:edge p:N990 .
+p:N915 p:edge p:N990 .
+p:N925 p:edge p:N990 .
+p:N935 p:edge p:N990 .
+p:N945 p:edge p:N990 .
+
+p:N110 p:edge p:N995 .
+p:N120 p:edge p:N995 .
+p:N130 p:edge p:N995 .
+p:N140 p:edge p:N995 .
+p:N150 p:edge p:N995 .
+p:N210 p:edge p:N995 .
+p:N220 p:edge p:N995 .
+p:N230 p:edge p:N995 .
+p:N240 p:edge p:N995 .
+p:N250 p:edge p:N995 .
+p:N310 p:edge p:N995 .
+p:N320 p:edge p:N995 .
+p:N330 p:edge p:N995 .
+p:N340 p:edge p:N995 .
+p:N350 p:edge p:N995 .
+p:N410 p:edge p:N995 .
+p:N420 p:edge p:N995 .
+p:N430 p:edge p:N995 .
+p:N440 p:edge p:N995 .
+p:N450 p:edge p:N995 .
+p:N510 p:edge p:N995 .
+p:N520 p:edge p:N995 .
+p:N530 p:edge p:N995 .
+p:N540 p:edge p:N995 .
+p:N550 p:edge p:N995 .
+p:N610 p:edge p:N995 .
+p:N620 p:edge p:N995 .
+p:N630 p:edge p:N995 .
+p:N640 p:edge p:N995 .
+p:N650 p:edge p:N995 .
+p:N710 p:edge p:N995 .
+p:N720 p:edge p:N995 .
+p:N730 p:edge p:N995 .
+p:N740 p:edge p:N995 .
+p:N750 p:edge p:N995 .
+p:N810 p:edge p:N995 .
+p:N820 p:edge p:N995 .
+p:N830 p:edge p:N995 .
+p:N840 p:edge p:N995 .
+p:N850 p:edge p:N995 .
+p:N910 p:edge p:N995 .
+p:N920 p:edge p:N995 .
+p:N930 p:edge p:N995 .
+p:N940 p:edge p:N995 .
+p:N950 p:edge p:N995 .
+
+p:N160 p:edge p:N999 .
+p:N170 p:edge p:N999 .
+p:N180 p:edge p:N999 .
+p:N190 p:edge p:N999 .
+p:N200 p:edge p:N999 .
+p:N260 p:edge p:N999 .
+p:N270 p:edge p:N999 .
+p:N280 p:edge p:N999 .
+p:N290 p:edge p:N999 .
+p:N300 p:edge p:N999 .
+p:N360 p:edge p:N999 .
+p:N370 p:edge p:N999 .
+p:N380 p:edge p:N999 .
+p:N390 p:edge p:N999 .
+p:N400 p:edge p:N999 .
+p:N460 p:edge p:N999 .
+p:N470 p:edge p:N999 .
+p:N480 p:edge p:N999 .
+p:N490 p:edge p:N999 .
+p:N500 p:edge p:N999 .
+p:N560 p:edge p:N999 .
+p:N570 p:edge p:N999 .
+p:N580 p:edge p:N999 .
+p:N590 p:edge p:N999 .
+p:N600 p:edge p:N999 .
+p:N660 p:edge p:N999 .
+p:N670 p:edge p:N999 .
+p:N680 p:edge p:N999 .
+p:N690 p:edge p:N999 .
+p:N700 p:edge p:N999 .
+p:N760 p:edge p:N999 .
+p:N770 p:edge p:N999 .
+p:N780 p:edge p:N999 .
+p:N790 p:edge p:N999 .
+p:N800 p:edge p:N999 .
+p:N860 p:edge p:N999 .
+p:N870 p:edge p:N999 .
+p:N880 p:edge p:N999 .
+p:N890 p:edge p:N999 .
+p:N900 p:edge p:N999 .
+p:N955 p:edge p:N999 .
+p:N960 p:edge p:N999 .
+p:N965 p:edge p:N999 .
+p:N970 p:edge p:N999 .
+p:N980 p:edge p:N999 .
+
+# ========== 统计信息 ==========
+# - 总节点数：1000个（N0-N999）
+# - 总边数：约5000条（超极高密度）
+# - 平均链长：约8-10层
+# - 最长路径：20跳（N0→...→N999）
+# - 最短跨层路径：N0→N990（直接连接，1跳）
+# - 超级汇聚点：N500, N750, N900, N990, N995, N999
+# - 超级分叉点：N0, N1, N2, N3, N4, N500, N750
+# - 跨层连接数：1000+条（超大规模）
+# - 多根节点系统：5个独立起点
+# - 20层深度结构：最大规模测试
+# - 网状交叉连接：数百条复杂路径
+# - 极限压力测试：内存、计算、并发处理

@@ -173,6 +173,7 @@ void TestInfer() {
 
     // 执行推理
     engine.reason();
+    // engine.iterativeReason();
 
     // 查询推理结果
     std::vector<Triple> queryResult = store.queryByPredicate("http://example.org/knows");
@@ -240,8 +241,10 @@ void TestMillionTriples() {
     InputParser parser;
     TripleStore store;
 
-    std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
+    std::vector<Triple> triples = parser.parseTurtle("input_examples/simple_dag.ttl");
     // std::vector<Triple> triples = parser.parseTurtle("input_examples/data_1m.ttl");
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/mid.ttl");
     std::cout << "Total triples: " << triples.size() << std::endl;
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
@@ -265,11 +268,65 @@ void TestMillionTriples() {
 
     start = std::chrono::high_resolution_clock::now();
     DatalogEngine engine(store, rules);
-    engine.reason();
+    // engine.reason();
+    engine.iterativeReason();
+    end = std::chrono::high_resolution_clock::now();
+
+    // engine.printTriples();
+
+    elapsed = end - start;
+    std::cout << "Elapsed time for reasoning:       " << elapsed.count() << " seconds" << std::endl;
+
+}
+
+void TestDAG() {
+    // 专门测试DAG数据集的推理性能
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+    InputParser parser;
+    TripleStore store;
+
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/simple_dag.ttl");
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/complex_dag.ttl");
+    std::vector<Triple> triples = parser.parseTurtle("input_examples/large_complex_dag.ttl");
+    std::cout << "Total triples: " << triples.size() << std::endl;
+
+    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "Elapsed time for parsing triples: " << elapsed.count() << " seconds" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
+    for (const auto& triple : triples) {
+        store.addTriple(triple);
+    }
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    std::cout << "Elapsed time for storing triples: " << elapsed.count() << " seconds" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/DAG-R.dl");
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    std::cout << "Elapsed time for parsing rules:   " << elapsed.count() << " seconds" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
+    DatalogEngine engine(store, rules);
+    // engine.reason();
+    engine.iterativeReason();
     end = std::chrono::high_resolution_clock::now();
     elapsed = end - start;
     std::cout << "Elapsed time for reasoning:       " << elapsed.count() << " seconds" << std::endl;
 
+    // engine.printTriples();
+
+
+    // 查询推理结果
+    std::vector<Triple> queryResult = store.queryByPredicate("http://dag.org#path");
+    std::cout << "=== All Paths in DAG (" << queryResult.size() << " total) ===" << std::endl;
+    // for (const auto& triple : queryResult) {
+    //     std::cout << triple.subject() << " --> " << triple.object() << std::endl;
+    // }
 }
 
 //// 计时用
@@ -343,13 +400,13 @@ int main() {
     
     // 测试字符串池性能优化
     // TestStringPoolPerformance();
-    
-    // 原有测试
+
     // TestInfer();
     // TestDatalogParser();
     // TestLargeFile();
     // startTimer();
-    TestMillionTriples();
+    // TestMillionTriples();
+    TestDAG();
 
     // parseDatabaseTable("rdfpanda", "triples");
     // connectSQLite("./SQLiteDb/test.db");

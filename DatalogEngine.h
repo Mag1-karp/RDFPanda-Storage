@@ -130,6 +130,9 @@ public:
         for (auto* map : bindingMapPool) delete map;
     }
     void reason();
+    void iterativeReason(); // 迭代器式推理入口
+
+    void printTriples();
 
 private:
     // std::vector<Triple> applyRule(const Rule& rule);
@@ -144,12 +147,27 @@ private:
                             std::vector<Triple> &newFacts,
                             std::map<std::string, std::string> &bindings);
 
+    // 新增：ID优化版本的leapfrogTriejoin
+    void leapfrogTriejoinOptimized(TrieNode *psoRoot, TrieNode *posRoot, const Rule &rule,
+                                   std::vector<Triple> &newFacts,
+                                   std::map<std::string, uint32_t> &bindingIds);
+
     void join_by_variable(TrieNode *psoRoot, TrieNode *posRoot, const Rule &rule,
                           const std::set<std::string> &variables,
                           const std::map<std::string, std::vector<std::pair<int, int>>> &varPositions,
                           std::map<std::string, std::string> &bindings, int varIdx, std::vector<Triple> &newFacts);
 
+    // 新增：ID优化版本的join_by_variable
+    void join_by_variable_optimized(TrieNode *psoRoot, TrieNode *posRoot, const Rule &rule,
+                                    const std::set<std::string> &variables,
+                                    const std::map<std::string, std::vector<std::pair<int, int>>> &varPositions,
+                                    std::map<std::string, uint32_t> &bindingIds, int varIdx, std::vector<Triple> &newFacts);
+
     static std::string substituteVariable(const std::string &term, const std::map<std::string, std::string> &bindings);
+    
+    // 新增：ID优化版本的辅助函数
+    static uint32_t substituteVariableId(const std::string &term, const std::map<std::string, uint32_t> &bindingIds);
+
     
     // 新增：Join顺序优化相关
     struct VariableSelectivity {
@@ -169,7 +187,14 @@ private:
         const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
         const std::map<std::string, std::string>& bindings
     ) const;
-    
+
+    std::vector<VariableSelectivity> computeVariableSelectivityOptimized(
+        const Rule& rule,
+        const std::set<std::string>& variables,
+        const std::map<std::string, std::vector<std::pair<int, int>>>& varPositions,
+        const std::map<std::string, uint32_t>& bindingIds
+    ) const;
+
     // 新增：获取ID的辅助函数
     uint32_t getIdFromString(const std::string& str) const;
     uint32_t substituteVariableToId(const std::string& term, const std::map<std::string, std::string>& bindings) const;
@@ -198,6 +223,56 @@ private:
     void returnTripleVector(std::vector<Triple>* vec);
     std::map<std::string, std::string>* getBindingMap();
     void returnBindingMap(std::map<std::string, std::string>* map);
+    
+    // 新增：迭代器式推理方法
+    void iterativeLeapfrogTriejoin(TrieNode *psoRoot, TrieNode *posRoot, const Rule &rule,
+                                   std::vector<Triple> &newFacts,
+                                   std::map<std::string, uint32_t>& bindingIds);
+
+    // 新增：迭代器式变量连接类
+    class VariableJoinIterator {
+    private:
+        struct VariableState {
+            std::string variable;
+            std::vector<TrieIterator*> iterators;
+            size_t currentIteratorIndex;
+            uint32_t currentValue;
+            bool atEnd;
+        };
+        
+        TrieNode* psoRoot;
+        TrieNode* posRoot;
+        const Rule& rule;
+        std::vector<std::string> orderedVariables;
+        std::vector<VariableState> variableStates;
+        std::map<std::string, std::vector<std::pair<int, int>>> varPositions;
+        std::map<std::string, uint32_t> bindingIds;
+        DatalogEngine* engine;
+        bool finished;
+        
+        void initializeVariableStates();
+        void initializeVariableIterators(size_t varIndex);
+        bool advanceVariable(size_t varIndex);
+        void resetVariablesFrom(size_t varIndex);
+        bool seekNext();
+        
+    public:
+        VariableJoinIterator(TrieNode* psoRoot, TrieNode* posRoot, const Rule& rule,
+                           const std::vector<std::string>& orderedVars,
+                           const std::map<std::string, std::vector<std::pair<int, int>>>& varPos,
+                           const std::map<std::string, uint32_t>& initialBindings,
+                           DatalogEngine* eng);
+        ~VariableJoinIterator();
+        
+        bool atEnd() const { return finished; }
+        std::map<std::string, uint32_t> getCurrentBindings() const { return bindingIds; }
+        bool next();
+    };
+
+    // 新增：基于迭代器的连接方法
+    void join_by_variable_iterative(TrieNode *psoRoot, TrieNode *posRoot, const Rule &rule,
+                                   std::vector<Triple> &newFacts,
+                                   std::map<std::string, uint32_t> &bindingIds);
 
 
     /*

@@ -1,6 +1,11 @@
 #include "TripleStore.h"
 
-void TripleStore::addTriple(const Triple& triple) {
+bool TripleStore::addTriple(const Triple& triple) {
+    // 检查三元组是否已存在
+    if (getNodeByTriple(triple) != nullptr) {
+        return false; // 三元组已存在，不重复添加
+    }
+    
     // 获取当前三元组的索引
     uint32_t triple_index = static_cast<uint32_t>(triple_ids.size());
     
@@ -19,6 +24,8 @@ void TripleStore::addTriple(const Triple& triple) {
     // 继续使用Trie树优化（保持现有逻辑）
     triePSO.insertPSO(triple);
     triePOS.insertPOS(triple);
+    
+    return true; // 成功添加新三元组
 }
 
 std::vector<Triple> TripleStore::queryBySubject(const std::string& subject) {

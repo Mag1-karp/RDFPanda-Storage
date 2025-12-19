@@ -43,7 +43,7 @@ public:
         Triple::setStringPool(&string_pool);
     }
     
-    void addTriple(const Triple& triple);
+    bool addTriple(const Triple& triple);
     std::vector<Triple> queryBySubject(const std::string& subject);
     std::vector<Triple> queryByPredicate(const std::string& predicate);
     std::vector<Triple> queryByObject(const std::string& object);
