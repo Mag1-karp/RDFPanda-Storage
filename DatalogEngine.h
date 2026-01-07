@@ -133,6 +133,7 @@ public:
     void iterativeReason(); // 迭代器式推理入口
 
     void printTriples();
+    size_t getTripleCount() const;
 
 private:
     // std::vector<Triple> applyRule(const Rule& rule);

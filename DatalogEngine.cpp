@@ -347,7 +347,7 @@ void DatalogEngine::iterativeReason() {
 
     } while (newFactAdded);
 
-    std::cout << "Total triples in store: " << store.getTripleCount() << std::endl;
+    // std::cout << "Total triples in store: " << store.getTripleCount() << std::endl;
 }
 
 bool DatalogEngine::isVariable(const std::string& term) {
@@ -1413,4 +1413,8 @@ void DatalogEngine::printTriples() {
     }
     
     std::cout << "=== End of Triple List ===" << std::endl;
+}
+
+size_t DatalogEngine::getTripleCount() const {
+    return store.getTripleCount();
 }

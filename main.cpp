@@ -287,10 +287,8 @@ void TestDAG() {
     TripleStore store;
 
     // std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG.ttl");
-    // std::vector<Triple> triples = parser.parseTurtle("input_examples/simple_dag.ttl");
-    // std::vector<Triple> triples = parser.parseTurtle("input_examples/complex_dag.ttl");
-    std::vector<Triple> triples = parser.parseTurtle("input_examples/large_complex_dag.ttl");
-    std::cout << "Total triples: " << triples.size() << std::endl;
+    std::vector<Triple> triples = parser.parseTurtle("input_examples/DAG_subset_10k.ttl");
+    // std::vector<Triple> triples = parser.parseTurtle("input_examples/dag_n5k_e20k.ttl");
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
@@ -303,6 +301,7 @@ void TestDAG() {
     end = std::chrono::high_resolution_clock::now();
     elapsed = end - start;
     std::cout << "Elapsed time for storing triples: " << elapsed.count() << " seconds" << std::endl;
+    int tripleCountBeforeReasoning = store.getTripleCount();
 
     start = std::chrono::high_resolution_clock::now();
     std::vector<Rule> rules = parser.parseDatalogFromFile("input_examples/DAG-R.dl");
@@ -319,6 +318,10 @@ void TestDAG() {
     std::cout << "Elapsed time for reasoning:       " << elapsed.count() << " seconds" << std::endl;
 
     // engine.printTriples();
+    size_t tripleCountAfterReasoning = engine.getTripleCount();
+
+    std::cout << "Triples before reasoning: " << tripleCountBeforeReasoning << std::endl;
+    std::cout << "Triples after reasoning:  " << tripleCountAfterReasoning << std::endl;
 
 
     // 查询推理结果
