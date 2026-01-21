@@ -1,0 +1,94 @@
+Running Valgrind Callgrind...
+(This will be slow - 10-20x slower than normal execution)
+
+==6197== Callgrind, a call-graph generating cache profiler
+==6197== Copyright (C) 2002-2017, and GNU GPL'd, by Josef Weidendorfer et al.
+==6197== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==6197== Command: ./build-wsl/RDFPanda_Storage
+==6197==
+==6197== For interactive control, run 'callgrind_control -h'.
+Elapsed time for parsing triples: 1.1077 seconds
+Elapsed time for storing triples: 0.302129 seconds
+Elapsed time for parsing rules:   0.0410125 seconds
+==6197== brk segment overflow in thread #1: can't grow to 0x4848000
+==6197== (see section Limitations in user manual)
+==6197== NOTE: further instances of this message will not be shown
+Elapsed time for reasoning:       20.4012 seconds
+Triples before reasoning: 10000
+Triples after reasoning:  32053
+=== All Paths in DAG (22053 total) ===
+==6197== 
+==6197== Events    : Ir
+==6197== Collected : 1833578056
+==6197==
+==6197== I   refs:      1,833,578,056
+
+═══════════════════════════════════════════════════════
+Analysis complete! Top 30 hotspot functions:
+═══════════════════════════════════════════════════════
+--------------------------------------------------------------------------------
+Profile data file 'callgrind.out.20260119_162940' (creator: callgrind-3.22.0)
+--------------------------------------------------------------------------------
+I1 cache:
+D1 cache:
+LL cache:
+Timerange: Basic block 0 - 1096095675
+Trigger: Program termination
+Profiled target:  ./build-wsl/RDFPanda_Storage (PID 6197, part 1)
+Events recorded:  Ir
+Events shown:     Ir
+Event sort order: Ir
+Thresholds:       99
+Include dirs:
+User annotated:
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+Ir
+--------------------------------------------------------------------------------
+1,833,578,056 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+Ir                    file:function
+--------------------------------------------------------------------------------
+902,868,188 (49.24%)  ./string/../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S:__memcpy_avx_unaligned_erms [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 88,709,465 ( 4.84%)  ./malloc/./malloc/malloc.c:_int_free [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 67,594,083 ( 3.69%)  ./malloc/./malloc/malloc.c:malloc [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 60,451,781 ( 3.30%)  ./malloc/./malloc/malloc.c:_int_malloc [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 39,570,909 ( 2.16%)  ./malloc/./malloc/malloc.c:free [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 37,908,309 ( 2.07%)  ./string/../sysdeps/x86_64/multiarch/memcmp-avx2-movbe.S:__memcmp_avx2_movbe [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 34,841,619 ( 1.90%)  /usr/include/c++/13/bits/regex_executor.tcc:std::__detail::_Executor<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allo
+cator<std::__cxx11::sub_match<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >, std::__cxx11::regex_traits<char>, true>::_M_dfs(std::__detail::_Ex
+ecutor<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::__cxx11::sub_match<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >, std::__cxx11::regex_traits<char>, true>::_Match_mode, long)'2 [/mnt/c/projects/RDFPanda-Storage/build-wsl/RDFPanda_Storage]
+ 25,449,694 ( 1.39%)  /usr/include/c++/13/bits/basic_string.tcc:void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) [clone .isra.0] [/mnt/c/projects/RDFPanda-Storage/build-wsl/RDFPanda_Storage]
+ 22,610,640 ( 1.23%)  ???:operator new(unsigned long) [/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33]
+ 21,849,924 ( 1.19%)  ./nptl/./nptl/pthread_rwlock_common.c:pthread_rwlock_unlock@@GLIBC_2.34
+ 18,583,228 ( 1.01%)  ./malloc/./malloc/malloc.c:malloc_consolidate [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 17,380,947 ( 0.95%)  ./string/../sysdeps/x86_64/multiarch/memset-vec-unaligned-erms.S:__memset_avx2_unaligned_erms [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 14,727,123 ( 0.80%)  ???:std::_Hash_bytes(void const*, unsigned long, unsigned long) [/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33]
+ 14,700,291 ( 0.80%)  ./nptl/./nptl/pthread_rwlock_rdlock.c:pthread_rwlock_rdlock@@GLIBC_2.34 [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 13,972,960 ( 0.76%)  ./nptl/./nptl/pthread_rwlock_unlock.c:pthread_rwlock_unlock@@GLIBC_2.34 [/usr/lib/x86_64-linux-gnu/libc.so.6]
+ 12,909,170 ( 0.70%)  ./malloc/./malloc/arena.c:free
+ 12,217,753 ( 0.67%)  ./nptl/./nptl/pthread_rwlock_common.c:pthread_rwlock_rdlock@@GLIBC_2.34
+ 12,084,774 ( 0.66%)  /usr/include/c++/13/bits/stl_tree.h:Trie::insertPSO(Triple const&)
+ 11,242,861 ( 0.61%)  /usr/include/c++/13/bits/stl_tree.h:Trie::insertPOS(Triple const&)
+ 10,672,182 ( 0.58%)  /usr/include/c++/13/bits/stl_tree.h:TripleStore::getNodeByTriple(Triple const&) const
+  8,765,616 ( 0.48%)  ???:std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&) [/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33]
+  7,541,523 ( 0.41%)  /usr/include/c++/13/bits/char_traits.h:void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) [clone .isra.0]  
+  6,690,882 ( 0.36%)  /usr/include/c++/13/bits/basic_string.h:std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::compare(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [clone .isra.0] [/mnt/c/projects/RDFPanda-Storage/build-wsl/RDFPanda_Storage]
+  6,256,767 ( 0.34%)  /usr/include/c++/13/bits/regex_executor.tcc:std::__detail::_Executor<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allo
+cator<std::__cxx11::sub_match<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >, std::__cxx11::regex_traits<char>, true>::_M_rep_once_more(std::__d
+etail::_Executor<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::__cxx11::sub_match<__gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >, std::__cxx11::regex_traits<char>, true>::_Match_mode, long)'2 [/mnt/c/projects/RDFPanda-Storage/build-wsl/RDFPanda_Storage]
+  5,908,782 ( 0.32%)  /usr/include/c++/13/bits/stl_tree.h:std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::
+allocator<char> > const, unsigned int>, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, unsigned int> >, std::less<std::__cxx11::basic_string<char, std::char_tr
+aits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, unsigned int> > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const [/mnt/c/projects/RDFPanda-Storage/build-wsl/RDFPanda_Storage]
+
+Full report saved to: callgrind.out.20260119_162940
+
+View in Windows:
+  notepad.exe callgrind.out.20260119_162940
+  or open: C:\projects\RDFPanda-Storage\callgrind.out.20260119_162940
+
+═══════════════════════════════════════════════════════════
+Analysis Complete
+═══════════════════════════════════════════════════════════
